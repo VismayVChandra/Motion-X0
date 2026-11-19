@@ -21,6 +21,7 @@ npm run build    # production build in dist/
 
 - [docs/protocol.md](docs/protocol.md): device protocol (JSON over WebSocket)
 - [docs/architecture.md](docs/architecture.md): structure and key decisions
+- [docs/i18n.md](docs/i18n.md): languages, and how to add Kannada
 
 ## Status
 
@@ -28,6 +29,6 @@ npm run build    # production build in dist/
 - [x] Wave 1: device control and safety (v0 design, connect / control / connection-lost screens, heartbeat, auto-reconnect, e-stop)
 - [x] Wave 2: session flow (setup, live session with ring and timeline, comfort check, sessions saved)
 - [x] Wave 3: therapist and progress (role switch, plan editor, plan-driven home, charts, streaks)
-- [ ] Wave 4: accessibility, languages, report
+- [x] Wave 4: accessibility, languages, report (English + Hindi, Simple mode, high contrast, voice prompts, printable report)
 - [ ] Wave 5: firmware
 - [ ] Wave 6: polish and demo readiness

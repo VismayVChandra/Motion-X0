@@ -3,7 +3,8 @@ import { DEFAULT_DEVICE_URL } from '../device/protocol';
 
 export type ThemePref = 'system' | 'light' | 'dark';
 export type Role = 'patient' | 'therapist';
-export type Language = 'en' | 'hi';
+/** Locale code; any file in src/i18n/locales (en, hi, kn, ...). */
+export type Language = string;
 
 export interface Settings {
   theme: ThemePref;
@@ -12,6 +13,12 @@ export interface Settings {
   deviceUrl: string;
   role: Role;
   language: Language;
+  /** One screen with a timer and huge Start/Stop buttons. */
+  simpleMode: boolean;
+  /** Stronger text and border contrast. */
+  highContrast: boolean;
+  /** Spoken prompts (session started, slowing down, finished). */
+  voice: boolean;
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
@@ -20,6 +27,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   deviceUrl: DEFAULT_DEVICE_URL,
   role: 'patient',
   language: 'en',
+  simpleMode: false,
+  highContrast: false,
+  voice: false,
 };
 
 export const SETTINGS_KEY = 'motionx.settings.v1';
@@ -39,7 +49,10 @@ export function sanitizeSettings(raw: unknown): Settings {
     deviceUrl:
       typeof r.deviceUrl === 'string' && /^wss?:\/\/.+/.test(r.deviceUrl) ? r.deviceUrl : DEFAULT_SETTINGS.deviceUrl,
     role: pick(r.role, ['patient', 'therapist'] as const, DEFAULT_SETTINGS.role),
-    language: pick(r.language, ['en', 'hi'] as const, DEFAULT_SETTINGS.language),
+    language: typeof r.language === 'string' && /^[a-z]{2,3}$/.test(r.language) ? r.language : DEFAULT_SETTINGS.language,
+    simpleMode: typeof r.simpleMode === 'boolean' ? r.simpleMode : DEFAULT_SETTINGS.simpleMode,
+    highContrast: typeof r.highContrast === 'boolean' ? r.highContrast : DEFAULT_SETTINGS.highContrast,
+    voice: typeof r.voice === 'boolean' ? r.voice : DEFAULT_SETTINGS.voice,
   };
 }
 

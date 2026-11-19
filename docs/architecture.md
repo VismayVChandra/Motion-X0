@@ -127,3 +127,14 @@ The emergency Stop bar is part of the app shell, so it appears on every tab whil
 | Adherence | Per week (Monday start): sum over days of min(done, target) ÷ (target × days covered). Only days from the plan start up to today count. |
 | Streak | Consecutive days meeting the daily target (any session without a plan). An unfinished today does not break it. |
 | Charts | Hand-rolled: minutes per day (7 or 30 days, goal line = duration × sessions per day), weekly adherence (4 or 8 weeks), comfort trend (threshold line at 7). Each has a text summary for screen readers. |
+
+## Accessibility, languages and report (Wave 4)
+
+| Topic | Rule |
+|---|---|
+| Languages | English and Hindi. Strings live in `src/i18n/locales/*.json`; a new file (e.g. `kn.json`) is picked up automatically. See [i18n.md](i18n.md). Dates use the locale; plurals use CLDR rules. |
+| Touch targets | 48 px minimum everywhere; primary actions 60–72 px; Simple mode buttons 104 px+. |
+| High contrast | Settings switch. `data-contrast="high"` on `<html>` swaps to black/white text, darker borders and 2 px outlines, in light and dark. |
+| Simple mode | One screen: big timer, huge START/PAUSE/RESUME and a red STOP (the emergency stop, shown while the motor or a session is active). No tabs. The comfort check still follows each session. |
+| Voice prompts | Optional (off by default). Web Speech API in the active language: started, paused, connection lost, slowing down, speeding up, one minute left, finished, emergency stop. Decided by a pure, tested `voiceCue()` function. |
+| Report | `#/report/<session id>`, opened from History, the therapist's latest sessions, or "View report" after a session. Print stylesheet: A4, always light, app chrome hidden, one page. Tested by printing to PDF with headless Edge in English and Hindi. |

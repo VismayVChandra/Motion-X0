@@ -1,9 +1,10 @@
 import type { ComponentChildren } from 'preact';
+import { t } from '../i18n';
 
 export function Switch({ checked, label, onChange }: { checked: boolean; label: string; onChange: (v: boolean) => void }) {
   return (
     <span class="switch-wrap">
-      <span aria-hidden="true">{checked ? 'On' : 'Off'}</span>
+      <span aria-hidden="true">{checked ? t('common.on') : t('common.off')}</span>
       <button
         type="button"
         class="switch"

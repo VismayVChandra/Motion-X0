@@ -1,15 +1,16 @@
 import type { ComponentChildren } from 'preact';
 import { device } from '../device/instance';
+import { t } from '../i18n';
 import { hrefFor, route, TAB_FOR, type Route } from '../router';
 import { settingsStore } from '../store/settings';
 import { Icon, type IconName } from './Icon';
 import { effectiveTheme } from './theme';
 
-const NAV: { route: Route; label: string; icon: IconName }[] = [
-  { route: 'home', label: 'Home', icon: 'house' },
-  { route: 'device', label: 'Device', icon: 'gauge' },
-  { route: 'history', label: 'History', icon: 'chartColumn' },
-  { route: 'settings', label: 'Settings', icon: 'settings' },
+const NAV: { route: Route; key: string; icon: IconName }[] = [
+  { route: 'home', key: 'nav.home', icon: 'house' },
+  { route: 'device', key: 'nav.device', icon: 'gauge' },
+  { route: 'history', key: 'nav.history', icon: 'chartColumn' },
+  { route: 'settings', key: 'nav.settings', icon: 'settings' },
 ];
 
 export function StatusBadge() {
@@ -19,32 +20,32 @@ export function StatusBadge() {
     return demo ? (
       <span class="badge neutral" role="status">
         <Icon name="flask" />
-        Demo mode
+        {t('status.demo')}
       </span>
     ) : (
       <span class="badge ok" role="status">
         <Icon name="wifi" />
-        Connected
+        {t('status.connected')}
       </span>
     );
   if (link === 'connecting')
     return (
       <span class="badge warn spin" role="status">
         <Icon name="loader" />
-        Connecting
+        {t('status.connecting')}
       </span>
     );
   if (link === 'lost')
     return (
       <span class="badge danger" role="status">
         <Icon name="wifiOff" />
-        Connection lost
+        {t('status.lost')}
       </span>
     );
   return (
     <span class="badge neutral" role="status">
       <Icon name="wifiOff" />
-      Not connected
+      {t('status.offline')}
     </span>
   );
 }
@@ -57,54 +58,65 @@ export function EStopBar() {
       <button type="button" class="btn-estop" onClick={() => device.emergencyStop()}>
         <Icon name="octagonX" />
         <span>
-          <strong>EMERGENCY STOP</strong>
-          <small>Stops the motor immediately</small>
+          <strong>{t('estop.title')}</strong>
+          <small>{t('estop.hint')}</small>
         </span>
       </button>
     </div>
   );
 }
 
-export function Shell({ children }: { children: ComponentChildren }) {
+export function Notice() {
+  return (
+    <p class="notice" role="note">
+      <Icon name="info" />
+      {t('notice')}
+    </p>
+  );
+}
+
+export function Topbar() {
   const theme = effectiveTheme(settingsStore.settings.value.theme);
+  return (
+    <header class="topbar">
+      <a class="logo" href={hrefFor('home')} aria-label={t('a11y.home')}>
+        <span class="logo-mark">
+          <Icon name="activity" />
+        </span>
+        <span class="logo-word">
+          MOTION<span>-X</span>
+        </span>
+      </a>
+      <div class="topbar-right">
+        <StatusBadge />
+        <button
+          type="button"
+          class="icon-btn"
+          aria-label={theme === 'dark' ? t('theme.toLight') : t('theme.toDark')}
+          onClick={() => settingsStore.update({ theme: theme === 'dark' ? 'light' : 'dark' })}
+        >
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+export function Shell({ children }: { children: ComponentChildren }) {
   const current = TAB_FOR[route.value];
-  const wide = route.value === 'home' && settingsStore.settings.value.role === 'therapist';
+  const wide =
+    (route.value === 'home' && settingsStore.settings.value.role === 'therapist') || route.value === 'report';
 
   return (
     <div class={`app${wide ? ' wide' : ''}`}>
-      <header class="topbar">
-        <a class="logo" href={hrefFor('home')} aria-label="MOTION-X home">
-          <span class="logo-mark">
-            <Icon name="activity" />
-          </span>
-          <span class="logo-word">
-            MOTION<span>-X</span>
-          </span>
-        </a>
-        <div class="topbar-right">
-          <StatusBadge />
-          <button
-            type="button"
-            class="icon-btn"
-            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            onClick={() => settingsStore.update({ theme: theme === 'dark' ? 'light' : 'dark' })}
-          >
-            <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
-          </button>
-        </div>
-      </header>
-
+      <Topbar />
       <main class="screen-body" id="main">
         {children}
       </main>
-
       <footer class="bottombar">
         <EStopBar />
-        <p class="notice" role="note">
-          <Icon name="info" />
-          Not a medical device. Prototype. Use under supervision.
-        </p>
-        <nav class="tabbar" aria-label="Main">
+        <Notice />
+        <nav class="tabbar" aria-label={t('a11y.mainNav')}>
           {NAV.map((item) => (
             <a
               key={item.route}
@@ -115,7 +127,7 @@ export function Shell({ children }: { children: ComponentChildren }) {
               <span class="tab-ic">
                 <Icon name={item.icon} />
               </span>
-              {item.label}
+              {t(item.key)}
             </a>
           ))}
         </nav>

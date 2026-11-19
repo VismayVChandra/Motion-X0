@@ -1,5 +1,6 @@
 import { computed, signal } from '@preact/signals';
 import { HEARTBEAT_INTERVAL_MS, HEARTBEAT_TIMEOUT_MS } from './protocol';
+import { ConnectError, type ConnectErrorCode } from './real';
 import { SimDevice } from './sim';
 import type { Command, ConnectionStatus, DeviceClient, DeviceState, Level, Unsubscribe } from './types';
 
@@ -29,7 +30,8 @@ export class DeviceController {
   readonly lastStateAt = signal<number | null>(null);
   readonly attempt = signal(0);
   readonly nextRetryAt = signal<number | null>(null);
-  readonly error = signal<string | null>(null);
+  /** Why the last connection attempt failed (the UI translates the code). */
+  readonly error = signal<ConnectErrorCode | null>(null);
   readonly kind = signal<'real' | 'sim' | null>(null);
   /** Bumped when the simulator's link-down flag changes, so the UI re-renders. */
   readonly simLinkDown = signal(false);
@@ -194,7 +196,7 @@ export class DeviceController {
     } catch (e) {
       this.connectingNow = false;
       if (!this.wanted || this.client !== c) return;
-      this.error.value = e instanceof Error ? e.message : String(e);
+      this.error.value = e instanceof ConnectError ? e.code : 'unreachable';
       this.scheduleRetry();
       return;
     }

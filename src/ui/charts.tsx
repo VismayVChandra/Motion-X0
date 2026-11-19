@@ -1,5 +1,6 @@
 import { COMFORT_ADVICE_THRESHOLD } from '../store/sessions';
 import type { ComfortPoint } from '../progress/stats';
+import { t } from '../i18n';
 
 export interface Bar {
   key: string;
@@ -39,9 +40,7 @@ export function BarChart({
     <div role="img" aria-label={summary}>
       <div class={`bars-plot${dense ? ' dense' : ''}`} style={{ height: `${PLOT_H + 20}px` }}>
         {goal !== undefined && goal > 0 && (
-          <div class="goal-line" style={{ bottom: `${(goal / top) * PLOT_H}px` }}>
-            <span>{goalLabel ?? `Goal ${goal}${unit}`}</span>
-          </div>
+          <div class="goal-line" style={{ bottom: `${(goal / top) * PLOT_H}px` }} />
         )}
         {bars.map((b) => {
           const zero = b.value === null || b.value === 0;
@@ -64,6 +63,14 @@ export function BarChart({
           </span>
         ))}
       </div>
+      {goal !== undefined && goal > 0 && (
+        <div class="legend" aria-hidden="true" style={{ marginTop: '6px' }}>
+          <span>
+            <i class="lg-goal" />
+            {goalLabel ?? t('chart.goal', { n: `${goal}${unit}` })}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -80,9 +87,9 @@ export function ComfortLineChart({ points }: { points: ComfortPoint[] }) {
   const y = (v: number) => 12 + ((10 - v) / 9) * 108;
   const pts = points.map((p, i) => `${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
   const high = points.filter((p) => p.value >= COMFORT_ADVICE_THRESHOLD).length;
-  const summary = `Comfort scores for the last ${points.length} sessions: ${points.map((p) => p.value).join(', ')}.${
-    high ? ` ${high} at or above the advisory level of ${COMFORT_ADVICE_THRESHOLD}.` : ''
-  }`;
+  const summary =
+    t('chart.comfortSummary', { n: points.length, list: points.map((p) => p.value).join(', ') }) +
+    (high ? ' ' + t('chart.comfortHigh', { n: high, level: COMFORT_ADVICE_THRESHOLD }) : '');
 
   return (
     <>
@@ -115,24 +122,24 @@ export function ComfortLineChart({ points }: { points: ComfortPoint[] }) {
           ),
         )}
         <text class="axis" x={left} y="142">
-          Earlier
+          {t('chart.earlier')}
         </text>
         <text class="axis" x={right} y="142" text-anchor="end">
-          Latest
+          {t('chart.latest')}
         </text>
       </svg>
       <div class="legend">
         <span>
           <i class="lg-line" />
-          Score
+          {t('chart.score')}
         </span>
         <span>
           <i class="lg-dash" />
-          Advisory level ({COMFORT_ADVICE_THRESHOLD})
+          {t('chart.advisory', { level: COMFORT_ADVICE_THRESHOLD })}
         </span>
         <span>
           <i class="lg-dot" />
-          At or above {COMFORT_ADVICE_THRESHOLD}
+          {t('chart.atOrAbove', { level: COMFORT_ADVICE_THRESHOLD })}
         </span>
       </div>
     </>

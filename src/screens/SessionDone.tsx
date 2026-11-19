@@ -1,15 +1,11 @@
 import { useState } from 'preact/hooks';
+import { t } from '../i18n';
 import { hrefFor, navigate } from '../router';
 import { lastSessionId, runner } from '../session/instance';
 import { isHighComfortScore, sessionStore } from '../store/sessions';
 import { Icon } from '../ui/Icon';
 import { duration } from '../ui/format';
-
-const END_TEXT = {
-  completed: 'Session complete',
-  ended_early: 'Session ended early',
-  estop: 'Session ended by emergency stop',
-} as const;
+import { endReasonText } from '../ui/session-bits';
 
 export function SessionDone() {
   const id = lastSessionId.value;
@@ -20,17 +16,18 @@ export function SessionDone() {
   if (!rec) {
     return (
       <section class="screen">
-        <h1>No session to review</h1>
+        <h1>{t('done.none')}</h1>
         <a class="btn btn-primary btn-lg btn-block" href={hrefFor('home')}>
-          Back to home
+          {t('done.backHome')}
         </a>
       </section>
     );
   }
 
   const high = isHighComfortScore(score);
-  const finish = (save: boolean) => {
-    if (save) sessionStore.update(rec.id, { comfort: score, note: note.trim() });
+  const save = () => sessionStore.update(rec.id, { comfort: score, note: note.trim() });
+  const finish = (doSave: boolean) => {
+    if (doSave) save();
     runner.clear();
     navigate('home');
   };
@@ -40,23 +37,23 @@ export function SessionDone() {
       <div class={`done-head${rec.endReason === 'estop' ? ' warn' : ''}`}>
         <Icon name={rec.endReason === 'completed' ? 'circleCheck' : rec.endReason === 'estop' ? 'octagonX' : 'flag'} />
         <div class="stack" style={{ gap: 0 }}>
-          <strong style={{ fontSize: '17px' }}>{END_TEXT[rec.endReason]}</strong>
+          <strong style={{ fontSize: '17px' }}>{endReasonText(rec.endReason)}</strong>
           <span class="muted small">
-            {duration(rec.activeSec)}
-            {rec.endReason !== 'completed' ? ` of ${duration(rec.plannedSec)}` : ''} · Level {rec.level} · {rec.cycles}{' '}
-            cycles · saved
+            {rec.endReason !== 'completed'
+              ? t('done.summaryOf', { time: duration(rec.activeSec), planned: duration(rec.plannedSec), level: rec.level, cycles: rec.cycles })
+              : t('done.summary', { time: duration(rec.activeSec), level: rec.level, cycles: rec.cycles })}
           </span>
         </div>
       </div>
 
       <div class="stack" style={{ gap: '8px' }}>
-        <h1 id="done-title">How comfortable did that feel?</h1>
+        <h1 id="done-title">{t('done.question')}</h1>
         <p class="lead" id="comfort-help">
-          Tap one number. 1 is very comfortable, 10 is very uncomfortable.
+          {t('done.help')}
         </p>
       </div>
 
-      <div class="comfort-grid" role="radiogroup" aria-label="Comfort score" aria-describedby="comfort-help">
+      <div class="comfort-grid" role="radiogroup" aria-label={t('done.scoreLabel')} aria-describedby="comfort-help">
         {Array.from({ length: 10 }, (_, i) => {
           const n = i + 1;
           const hue = Math.round(145 - (i * 145) / 9);
@@ -68,7 +65,7 @@ export function SessionDone() {
               class="cbtn"
               role="radio"
               aria-checked={sel}
-              aria-label={`${n}${n === 1 ? ', very comfortable' : n === 10 ? ', very uncomfortable' : ''}`}
+              aria-label={n === 1 ? t('done.aria1') : n === 10 ? t('done.aria10') : String(n)}
               style={{ '--h': hue }}
               onClick={() => setScore(n)}
             >
@@ -85,10 +82,10 @@ export function SessionDone() {
       <div class="scale-labels" aria-hidden="true">
         <span>
           <Icon name="smile" />
-          Very comfortable
+          {t('done.veryComfortable')}
         </span>
         <span>
-          Very uncomfortable
+          {t('done.veryUncomfortable')}
           <Icon name="frown" />
         </span>
       </div>
@@ -97,21 +94,21 @@ export function SessionDone() {
         <div class="advisory" role="alert">
           <Icon name="triangleAlert" />
           <div>
-            <strong>Please stop and consult your therapist before your next session.</strong>
-            <p>You scored {score} out of 10. This score is saved with the session for your therapist to see.</p>
+            <strong>{t('done.advice')}</strong>
+            <p>{t('done.adviceDetail', { n: score as number })}</p>
           </div>
         </div>
       )}
 
       <div class="field">
         <label for="session-note">
-          Anything to add? <span class="muted">(optional)</span>
+          {t('done.note')} <span class="muted">{t('common.optional')}</span>
         </label>
         <textarea
           id="session-note"
           class="input"
           maxLength={500}
-          placeholder="e.g. a little stiff at the start"
+          placeholder={t('done.notePlaceholder')}
           value={note}
           onInput={(e) => setNote(e.currentTarget.value)}
         />
@@ -119,11 +116,25 @@ export function SessionDone() {
 
       <button type="button" class="btn btn-primary btn-lg btn-block" disabled={score === null} onClick={() => finish(true)}>
         <Icon name="check" />
-        {score === null ? 'Choose a number to save' : 'Save and finish'}
+        {score === null ? t('done.choose') : t('done.save')}
       </button>
-      <button type="button" class="btn btn-ghost btn-block" onClick={() => finish(false)}>
-        Skip for now
-      </button>
+      <div class="btn-pair">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onClick={() => {
+            if (score !== null) save();
+            runner.clear();
+            navigate('report', rec.id);
+          }}
+        >
+          <Icon name="fileText" />
+          {t('done.report')}
+        </button>
+        <button type="button" class="btn btn-ghost" onClick={() => finish(false)}>
+          {t('done.skip')}
+        </button>
+      </div>
     </section>
   );
 }

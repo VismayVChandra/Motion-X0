@@ -121,7 +121,7 @@ describe('DeviceController with RealDevice', () => {
     FakeSocket.last().fail();
     await vi.advanceTimersByTimeAsync(0);
     expect(ctrl.attempt.value).toBe(1);
-    expect(ctrl.error.value).toMatch(/Couldn't reach/);
+    expect(ctrl.error.value).toBe('unreachable');
 
     await vi.advanceTimersByTimeAsync(1000); // 1st retry
     expect(FakeSocket.instances).toHaveLength(2);

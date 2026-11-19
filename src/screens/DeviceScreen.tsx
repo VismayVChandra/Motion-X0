@@ -3,11 +3,12 @@ import { useEffect } from 'preact/hooks';
 import { device, now } from '../device/instance';
 import { NOMINAL_RPM } from '../device/protocol';
 import type { DeviceState, Level } from '../device/types';
+import { t } from '../i18n';
 import { settingsStore } from '../store/settings';
 import { Icon } from '../ui/Icon';
 import { Switch } from '../ui/controls';
+import { levelName } from '../ui/session-bits';
 
-export const LEVEL_NAMES: Record<1 | 2 | 3, string> = { 1: 'Gentle', 2: 'Steady', 3: 'Brisk' };
 const SPEEDS: (1 | 2 | 3)[] = [1, 2, 3];
 /** Level picked while stopped; kept across reconnects and screen changes. */
 const chosenLevel = signal<1 | 2 | 3>(1);
@@ -20,13 +21,20 @@ export function DeviceScreen() {
   return <ConnectView />;
 }
 
+/** Seconds until the next automatic reconnect, or null. */
+function retryIn(): number | null {
+  const at = device.nextRetryAt.value;
+  return at ? Math.max(0, Math.ceil((at - now.value) / 1000)) : null;
+}
+
 // ---------------------------------------------------------------- Connect
 
 function ConnectView() {
   const link = device.link.value;
   const demo = settingsStore.settings.value.demoMode;
   const searching = link === 'connecting';
-  const retryIn = device.nextRetryAt.value ? Math.max(0, Math.ceil((device.nextRetryAt.value - now.value) / 1000)) : null;
+  const wait = retryIn();
+  const err = device.error.value;
 
   return (
     <section class="screen" aria-labelledby="connect-title">
@@ -34,30 +42,26 @@ function ConnectView() {
         <Icon name={demo ? 'flask' : 'wifi'} />
       </div>
       <div class="stack" style={{ gap: '8px' }}>
-        <h1 id="connect-title">{demo ? 'Demo device' : 'Connect to your MOTION-X'}</h1>
-        <p class="lead">
-          {demo
-            ? 'Demo mode uses a simulated machine. Nothing moves, and every screen works.'
-            : 'Your phone talks to the machine over its own Wi-Fi. No internet needed.'}
-        </p>
+        <h1 id="connect-title">{demo ? t('connect.demoTitle') : t('connect.title')}</h1>
+        <p class="lead">{demo ? t('connect.demoLead') : t('connect.lead')}</p>
       </div>
 
       {!demo && (
         <ol class="steps card">
           <li>
             <span class="step-n">1</span>
-            <strong>Switch on the machine</strong>
+            <strong>{t('connect.step1')}</strong>
           </li>
           <li>
             <span class="step-n">2</span>
             <div class="stack">
-              <strong>Join the “MOTION-X” Wi-Fi</strong>
-              <span class="muted small">If your phone says “no internet”, choose to stay connected.</span>
+              <strong>{t('connect.step2')}</strong>
+              <span class="muted small">{t('connect.step2hint')}</span>
             </div>
           </li>
           <li>
             <span class="step-n">3</span>
-            <strong>Come back here. The app connects by itself.</strong>
+            <strong>{t('connect.step3')}</strong>
           </li>
         </ol>
       )}
@@ -68,19 +72,21 @@ function ConnectView() {
             <Icon name="loader" />
           </span>
           <div class="stack">
-            <strong>{demo ? 'Starting demo device…' : 'Looking for MOTION-X…'}</strong>
+            <strong>{demo ? t('connect.startingDemo') : t('connect.looking')}</strong>
             <span class="muted small">
               {device.attempt.value > 0
-                ? `Auto-reconnect is on${retryIn !== null ? ` · next try in ${retryIn} s` : ''}`
-                : 'This takes a moment'}
+                ? wait !== null
+                  ? t('connect.autoRetryIn', { s: wait })
+                  : t('connect.autoRetry')
+                : t('connect.moment')}
             </span>
           </div>
         </div>
       )}
 
-      {device.error.value && searching && (
+      {err && err !== 'cancelled' && searching && (
         <p class="field-error" role="alert">
-          {device.error.value}
+          {t(`connect.error.${err}`)}
         </p>
       )}
 
@@ -88,29 +94,29 @@ function ConnectView() {
         <div class="btn-pair">
           <button type="button" class="btn btn-primary btn-lg" onClick={() => device.retryNow()}>
             <Icon name="rotateCw" />
-            Try now
+            {t('common.tryNow')}
           </button>
           <button type="button" class="btn btn-secondary btn-lg" onClick={() => device.disconnect()}>
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       ) : (
         <button type="button" class="btn btn-primary btn-lg btn-block" onClick={() => void device.connect()}>
           <Icon name="link" />
-          {demo ? 'Start demo device' : 'Connect to device'}
+          {demo ? t('connect.startDemo') : t('connect.connect')}
         </button>
       )}
 
-      <div class="divider">or</div>
+      <div class="divider">{t('common.or')}</div>
       {demo ? (
         <button type="button" class="btn btn-secondary btn-lg btn-block" onClick={() => switchMode(false)}>
           <Icon name="wifi" />
-          Use the real device
+          {t('connect.useReal')}
         </button>
       ) : (
         <button type="button" class="btn btn-secondary btn-lg btn-block" onClick={() => switchMode(true)}>
           <Icon name="flask" />
-          Use Demo mode <span class="btn-sub">(simulated device)</span>
+          {t('connect.useDemo')} <span class="btn-sub">{t('connect.useDemoSub')}</span>
         </button>
       )}
     </section>
@@ -118,7 +124,7 @@ function ConnectView() {
 }
 
 /** Switch Demo mode and make sure we end up connecting. */
-function switchMode(demo: boolean) {
+export function switchMode(demo: boolean) {
   settingsStore.update({ demoMode: demo }); // instance effect reconfigures if already connecting
   void device.connect();
 }
@@ -142,39 +148,18 @@ function ControlView({ state }: { state: DeviceState }) {
   return (
     <section class="screen" aria-labelledby="device-title">
       <div class="row-between">
-        <h1 id="device-title">Device</h1>
+        <h1 id="device-title">{t('device.title')}</h1>
         <MotorBadge state={state} />
       </div>
 
-      {estop && (
-        <div class="alarm" role="alert">
-          <div class="alarm-top">
-            <span class="alarm-ic">
-              <Icon name="octagonX" />
-            </span>
-            <div class="stack" style={{ gap: '6px' }}>
-              <h2>Emergency stop is on</h2>
-              <p>The motor is stopped. Check that everyone is safe before you reset.</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            class="btn btn-secondary btn-lg btn-block"
-            disabled={state.running}
-            onClick={() => device.reset()}
-          >
-            <Icon name="rotateCcw" />
-            Reset emergency stop
-          </button>
-        </div>
-      )}
+      {estop && <EstopAlarm running={state.running} />}
 
       {timedOut && !active && (
         <div class="advisory" role="status">
           <Icon name="triangleAlert" />
           <div>
-            <strong>The motor stopped for safety</strong>
-            <p>The connection dropped, so the machine stopped on its own. Press Start to continue.</p>
+            <strong>{t('device.timeoutTitle')}</strong>
+            <p>{t('device.timeoutText')}</p>
           </div>
         </div>
       )}
@@ -188,20 +173,21 @@ function ControlView({ state }: { state: DeviceState }) {
           onClick={() => !active && device.start(chosen)}
         >
           <Icon name={active ? 'check' : 'play'} />
-          {active ? 'Running' : 'Start'}
+          {active ? t('device.running') : t('device.start')}
         </button>
         <button type="button" class="btn btn-secondary btn-lg" disabled={!active} onClick={() => device.stop()}>
           <Icon name="square" />
-          Stop motor
+          {t('device.stopMotor')}
         </button>
       </div>
 
       <section class="card" aria-labelledby="speed-title">
-        <h2 id="speed-title">Speed level</h2>
-        <div class="seg" role="radiogroup" aria-label="Speed level" style={{ paddingTop: '8px' }}>
+        <h2 id="speed-title">{t('device.speedLevel')}</h2>
+        <div class="seg" role="radiogroup" aria-label={t('device.speedLevel')} style={{ paddingTop: '8px' }}>
           {SPEEDS.map((l) => {
             const selected = l === target;
             const isNow = ramping && state.level === l && !selected;
+            const tag = selected && ramping ? t('device.target') : isNow ? t('device.now') : '';
             return (
               <button
                 key={l}
@@ -209,28 +195,27 @@ function ControlView({ state }: { state: DeviceState }) {
                 class={`seg-btn${isNow ? ' is-current' : ''}`}
                 role="radio"
                 aria-checked={selected}
-                aria-label={`Level ${l}, ${LEVEL_NAMES[l]}${isNow ? ', current' : ''}${selected && ramping ? ', target' : ''}`}
+                aria-label={t('level.aria', { n: l, name: levelName(l) }) + (tag ? `, ${tag}` : '')}
                 disabled={estop}
                 onClick={() => pickLevel(l)}
               >
-                {selected && ramping && <span class="seg-tag">Target</span>}
-                {isNow && <span class="seg-tag">Now</span>}
+                {tag && <span class="seg-tag">{tag}</span>}
                 <span class="seg-main">{l}</span>
-                <span class="seg-sub">{LEVEL_NAMES[l]}</span>
+                <span class="seg-sub">{levelName(l)}</span>
               </button>
             );
           })}
         </div>
         {ramping && <RampRow state={state} />}
-        {!active && !estop && <p class="muted small">Pick a level, then press Start. The motor speeds up gently.</p>}
+        {!active && !estop && <p class="muted small">{t('device.pickHint')}</p>}
       </section>
 
       <section class="stack" style={{ gap: '10px' }} aria-labelledby="live-title">
         <div class="row-between">
-          <h2 id="live-title">Live readouts</h2>
+          <h2 id="live-title">{t('device.readouts')}</h2>
           <span class="live-label">
             <span class="live-dot" />
-            Live
+            {t('device.live')}
           </span>
         </div>
         <Readouts state={state} />
@@ -240,9 +225,30 @@ function ControlView({ state }: { state: DeviceState }) {
 
       <button type="button" class="btn btn-ghost btn-block" onClick={() => device.disconnect()}>
         <Icon name="unplug" />
-        Disconnect
+        {t('device.disconnect')}
       </button>
     </section>
+  );
+}
+
+/** Shown while the e-stop latch is set. Also used by Simple mode. */
+export function EstopAlarm({ running }: { running: boolean }) {
+  return (
+    <div class="alarm" role="alert">
+      <div class="alarm-top">
+        <span class="alarm-ic">
+          <Icon name="octagonX" />
+        </span>
+        <div class="stack" style={{ gap: '6px' }}>
+          <h2>{t('device.estopTitle')}</h2>
+          <p>{t('device.estopText')}</p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-lg btn-block" disabled={running} onClick={() => device.reset()}>
+        <Icon name="rotateCcw" />
+        {t('device.estopReset')}
+      </button>
+    </div>
   );
 }
 
@@ -251,34 +257,34 @@ function MotorBadge({ state }: { state: DeviceState }) {
     return (
       <span class="badge danger">
         <Icon name="octagonX" />
-        Emergency stop
+        {t('device.badgeEstop')}
       </span>
     );
   if (state.running && state.level < state.targetLevel)
     return (
       <span class="badge ok">
         <Icon name="trendingUp" />
-        Speeding up
+        {t('device.badgeUp')}
       </span>
     );
   if (state.running && state.level > state.targetLevel)
     return (
       <span class="badge warn">
         <Icon name="trendingDown" />
-        Slowing down
+        {t('device.badgeDown')}
       </span>
     );
   if (state.running)
     return (
       <span class="badge ok">
         <Icon name="circlePlay" />
-        Motor running
+        {t('device.badgeRunning')}
       </span>
     );
   return (
     <span class="badge neutral">
       <Icon name="circleStop" />
-      Stopped
+      {t('device.badgeStopped')}
     </span>
   );
 }
@@ -298,38 +304,40 @@ function RampRow({ state }: { state: DeviceState }) {
       <Icon name={up ? 'trendingUp' : 'trendingDown'} />
       <div style={{ flex: 1 }}>
         <strong>
-          {state.targetLevel === 0 ? 'Slowing to a stop…' : `${up ? 'Speeding up' : 'Slowing'} to level ${state.targetLevel}…`}
+          {state.targetLevel === 0
+            ? t('device.rampStop')
+            : up
+              ? t('device.rampUp', { n: state.targetLevel })
+              : t('device.rampDown', { n: state.targetLevel })}
         </strong>
         <div class="ramp-track" aria-hidden="true">
           <div class="ramp-fill" style={{ width: `${Math.round(pct * 100)}%` }} />
         </div>
-        <span class="muted small">
-          Now {state.level} · Target {state.targetLevel} · changes are always gradual
-        </span>
+        <span class="muted small">{t('device.rampInfo', { now: state.level, target: state.targetLevel })}</span>
       </div>
     </div>
   );
 }
 
-function Readouts({ state, dim }: { state: DeviceState; dim?: boolean }) {
+function Readouts({ state }: { state: DeviceState }) {
   return (
-    <div class={`stats${dim ? ' dim' : ''}`}>
+    <div class="stats">
       <div class="stat">
-        <span class="stat-label">Speed level</span>
+        <span class="stat-label">{t('device.speedLevel')}</span>
         <span class="stat-value">{state.level}</span>
         <span class="stat-unit">
-          {state.level !== state.targetLevel ? `target ${state.targetLevel}` : state.level === 0 ? 'stopped' : LEVEL_NAMES[state.level]}
+          {state.level !== state.targetLevel ? t('device.targetN', { n: state.targetLevel }) : levelName(state.level)}
         </span>
       </div>
       <div class="stat">
-        <span class="stat-label">Pedal speed</span>
+        <span class="stat-label">{t('device.pedalSpeed')}</span>
         <span class="stat-value">{state.rpm === null ? '–' : Math.round(state.rpm)}</span>
-        <span class="stat-unit">{state.rpm === null ? 'no sensor' : 'rpm'}</span>
+        <span class="stat-unit">{state.rpm === null ? t('device.noSensor') : t('unit.rpm')}</span>
       </div>
       <div class="stat">
-        <span class="stat-label">Motor current</span>
+        <span class="stat-label">{t('device.current')}</span>
         <span class="stat-value">{state.current === null ? '–' : state.current.toFixed(2)}</span>
-        <span class="stat-unit">{state.current === null ? 'no sensor' : 'amps'}</span>
+        <span class="stat-unit">{state.current === null ? t('device.noSensor') : t('unit.amps')}</span>
       </div>
     </div>
   );
@@ -341,10 +349,10 @@ function DemoTools() {
   return (
     <section class="card demo-card" aria-labelledby="demo-title">
       <div class="row-between">
-        <h2 id="demo-title">Demo tools</h2>
+        <h2 id="demo-title">{t('demo.title')}</h2>
         <span class="badge neutral">
           <Icon name="flask" />
-          Simulator only
+          {t('demo.badge')}
         </span>
       </div>
       <div class="set-row first">
@@ -353,15 +361,11 @@ function DemoTools() {
             <Icon name="wifiOff" />
           </span>
           <div>
-            <strong>Simulate connection drop</strong>
-            <span class="desc">Messages stop both ways. The machine stops itself after 2 s.</span>
+            <strong>{t('demo.drop')}</strong>
+            <span class="desc">{t('demo.dropDesc')}</span>
           </div>
         </div>
-        <Switch
-          checked={device.simLinkDown.value}
-          label="Simulate connection drop"
-          onChange={(v) => device.setSimLinkDown(v)}
-        />
+        <Switch checked={device.simLinkDown.value} label={t('demo.drop')} onChange={(v) => device.setSimLinkDown(v)} />
       </div>
       <div class="set-row column">
         <div class="set-left">
@@ -369,13 +373,19 @@ function DemoTools() {
             <Icon name="radio" />
           </span>
           <div>
-            <strong>IR remote</strong>
-            <span class="desc">0 = stop, 1–3 = speed level. Works without the app’s heartbeat.</span>
+            <strong>{t('demo.ir')}</strong>
+            <span class="desc">{t('demo.irDesc')}</span>
           </div>
         </div>
         <div class="ir-pad">
           {([0, 1, 2, 3] as Level[]).map((l) => (
-            <button key={l} type="button" class="btn btn-secondary" onClick={() => sim.pressIr(l)}>
+            <button
+              key={l}
+              type="button"
+              class="btn btn-secondary"
+              aria-label={t('demo.irKey', { n: l })}
+              onClick={() => sim.pressIr(l)}
+            >
               {l}
             </button>
           ))}
@@ -395,7 +405,8 @@ function LostView() {
   const ago = lastAt ? Math.max(0, Math.round((now.value - lastAt) / 1000)) : null;
   const demo = device.kind.value === 'sim';
   const simDown = device.simLinkDown.value;
-  const retryIn = device.nextRetryAt.value ? Math.max(0, Math.ceil((device.nextRetryAt.value - now.value) / 1000)) : null;
+  const wait = retryIn();
+  const attempt = device.attempt.value;
 
   return (
     <section class="screen">
@@ -405,19 +416,19 @@ function LostView() {
             <Icon name="octagonAlert" />
           </span>
           <div class="stack" style={{ gap: '6px' }}>
-            <h2>Connection lost: motor stopped</h2>
-            <p>The machine stops the motor on its own when it loses contact with the app. This is a safety step.</p>
+            <h2>{t('lost.title')}</h2>
+            <p>{t('lost.text')}</p>
           </div>
         </div>
         {demo && simDown ? (
           <button type="button" class="btn btn-primary btn-lg btn-block" onClick={() => device.setSimLinkDown(false)}>
             <Icon name="wifi" />
-            Restore connection (demo)
+            {t('lost.restoreDemo')}
           </button>
         ) : (
           <button type="button" class="btn btn-primary btn-lg btn-block" onClick={() => device.retryNow()}>
             <Icon name="rotateCw" />
-            Reconnect
+            {t('lost.reconnect')}
           </button>
         )}
       </div>
@@ -425,34 +436,40 @@ function LostView() {
       <p class="status-line spin" role="status">
         <Icon name="loader" />
         {demo && simDown
-          ? 'Simulated drop is on'
-          : `Trying again automatically${device.attempt.value ? ` · attempt ${device.attempt.value}` : ''}${retryIn !== null ? ` · next in ${retryIn} s` : ''}`}
+          ? t('lost.simOn')
+          : [
+              t('lost.retrying'),
+              attempt ? t('lost.attempt', { n: attempt }) : '',
+              wait !== null ? t('lost.nextIn', { s: wait }) : '',
+            ]
+              .filter(Boolean)
+              .join(' · ')}
       </p>
 
       {last && (
-        <section class="card dim" aria-label="Last readings">
+        <section class="card dim" aria-label={t('lost.lastReadings')}>
           <div class="row-between">
-            <h2>Last readings</h2>
-            {ago !== null && <span class="muted small">{ago} s ago</span>}
+            <h2>{t('lost.lastReadings')}</h2>
+            {ago !== null && <span class="muted small">{t('lost.ago', { s: ago })}</span>}
           </div>
           <Readouts state={last} />
         </section>
       )}
 
       <section class="card">
-        <h2>If this keeps happening</h2>
+        <h2>{t('lost.helpTitle')}</h2>
         <ul class="bullets">
           <li>
             <Icon name="power" />
-            <span>Check the machine is switched on</span>
+            <span>{t('lost.help1')}</span>
           </li>
           <li>
             <Icon name="smartphone" />
-            <span>Keep your phone within a few metres of the machine</span>
+            <span>{t('lost.help2')}</span>
           </li>
           <li>
             <Icon name="wifi" />
-            <span>Rejoin the “MOTION-X” Wi-Fi</span>
+            <span>{t('lost.help3')}</span>
           </li>
         </ul>
       </section>
@@ -460,7 +477,7 @@ function LostView() {
       {!demo && (
         <button type="button" class="btn btn-ghost btn-block" onClick={() => switchMode(true)}>
           <Icon name="flask" />
-          Use Demo mode instead
+          {t('lost.useDemo')}
         </button>
       )}
     </section>

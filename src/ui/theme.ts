@@ -1,4 +1,5 @@
 import { effect, signal } from '@preact/signals';
+import { lang, meta } from '../i18n';
 import { settingsStore, type ThemePref } from '../store/settings';
 
 const media = typeof matchMedia === 'undefined' ? null : matchMedia('(prefers-color-scheme: dark)');
@@ -11,14 +12,22 @@ export function effectiveTheme(pref: ThemePref): 'light' | 'dark' {
   return systemDark.value ? 'dark' : 'light';
 }
 
-/** Reflect the theme preference on <html data-theme>. 'system' removes it so the media query decides. */
+/**
+ * Reflect display settings on <html>: data-theme (always the resolved light/dark, so
+ * high-contrast tokens can target it), data-contrast, and lang for screen readers/fonts.
+ */
 export function startThemeSync(): void {
   effect(() => {
-    const theme = settingsStore.settings.value.theme;
+    const s = settingsStore.settings.value;
+    const theme = effectiveTheme(s.theme);
     const root = document.documentElement;
-    if (theme === 'system') delete root.dataset.theme;
-    else root.dataset.theme = theme;
-    const meta = document.querySelector('meta[name="theme-color"]');
-    meta?.setAttribute('content', effectiveTheme(theme) === 'dark' ? '#0a1211' : '#f4f7f6');
+    root.dataset.theme = theme;
+    if (s.highContrast) root.dataset.contrast = 'high';
+    else delete root.dataset.contrast;
+    root.lang = lang.value;
+    root.dir = 'ltr';
+    document.title = 'MOTION-X';
+    void meta.value;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0a1211' : '#f4f7f6');
   });
 }

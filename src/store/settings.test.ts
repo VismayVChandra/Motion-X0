@@ -33,12 +33,17 @@ describe('settings store', () => {
 
   it('rejects invalid values field by field', () => {
     expect(
-      sanitizeSettings({ theme: 'neon', demoMode: 'yes', deviceUrl: 'http://x', role: 'admin', language: 'kn' }),
+      sanitizeSettings({ theme: 'neon', demoMode: 'yes', deviceUrl: 'http://x', role: 'admin', language: 'Klingon!', simpleMode: 1, highContrast: 'y', voice: null }),
     ).toEqual(DEFAULT_SETTINGS);
     expect(sanitizeSettings({ theme: 'light', deviceUrl: 'ws://10.0.0.5/ws' })).toMatchObject({
       theme: 'light',
       deviceUrl: 'ws://10.0.0.5/ws',
     });
+  });
+
+  it('accepts any locale code, so new language files need no code change', () => {
+    expect(sanitizeSettings({ language: 'kn' }).language).toBe('kn');
+    expect(sanitizeSettings({ language: 'hi' }).language).toBe('hi');
   });
 
   it('reset restores defaults', () => {

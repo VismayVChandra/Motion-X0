@@ -18,7 +18,17 @@ const OPEN = 1;
 
 export const defaultSocketFactory: SocketFactory = (url) => new WebSocket(url) as unknown as SocketLike;
 
-export class ConnectError extends Error {}
+export type ConnectErrorCode = 'mixed_content' | 'invalid_address' | 'timeout' | 'unreachable' | 'cancelled' | 'busy';
+
+/** Connection failure with a stable code (the UI translates the code; the message is for logs). */
+export class ConnectError extends Error {
+  constructor(
+    readonly code: ConnectErrorCode,
+    message: string,
+  ) {
+    super(message);
+  }
+}
 
 /** True when the page is HTTPS and the device URL is plain ws:// (browsers block that). */
 export function isMixedContent(url: string, pageProtocol = typeof location === 'undefined' ? '' : location.protocol) {
@@ -44,10 +54,10 @@ export class RealDevice implements DeviceClient {
   ) {}
 
   connect(): Promise<void> {
-    if (this.ws) return this.status === 'connected' ? Promise.resolve() : Promise.reject(new ConnectError('Already connecting'));
+    if (this.ws) return this.status === 'connected' ? Promise.resolve() : Promise.reject(new ConnectError('busy', 'Already connecting'));
     if (isMixedContent(this.url)) {
       return Promise.reject(
-        new ConnectError('This page was opened over HTTPS, so the browser blocks ws:// connections. Open the app from the device at http://192.168.4.1.'),
+        new ConnectError('mixed_content', 'This page was opened over HTTPS, so the browser blocks ws:// connections. Open the app from the device at http://192.168.4.1.'),
       );
     }
 
@@ -58,18 +68,18 @@ export class RealDevice implements DeviceClient {
         ws = this.factory(this.url);
       } catch {
         this.setStatus('disconnected');
-        reject(new ConnectError('That device address is not valid.'));
+        reject(new ConnectError('invalid_address', 'That device address is not valid.'));
         return;
       }
       this.ws = ws;
       let opened = false;
 
-      const fail = (msg: string) => {
+      const fail = (code: ConnectErrorCode, msg: string) => {
         clearTimeout(timer);
         this.pendingReject = null;
-        reject(new ConnectError(msg));
+        reject(new ConnectError(code, msg));
       };
-      this.pendingReject = (e) => fail(e.message);
+      this.pendingReject = (e) => fail(e instanceof ConnectError ? e.code : 'cancelled', e.message);
 
       const timer = setTimeout(() => {
         if (opened) return;
@@ -81,7 +91,7 @@ export class RealDevice implements DeviceClient {
           /* ignore */
         }
         this.setStatus('disconnected');
-        fail("Couldn't reach MOTION-X (timed out).");
+        fail('timeout', "Couldn't reach MOTION-X (timed out).");
       }, this.connectTimeoutMs);
 
       ws.onopen = () => {
@@ -106,7 +116,7 @@ export class RealDevice implements DeviceClient {
         this.detach(ws);
         if (this.ws === ws) this.ws = null;
         this.setStatus('disconnected');
-        if (!opened) fail("Couldn't reach MOTION-X. Are you on its Wi-Fi?");
+        if (!opened) fail('unreachable', "Couldn't reach MOTION-X. Are you on its Wi-Fi?");
       };
     });
   }
@@ -122,7 +132,7 @@ export class RealDevice implements DeviceClient {
         /* ignore */
       }
     }
-    this.pendingReject?.(new ConnectError('Cancelled'));
+    this.pendingReject?.(new ConnectError('cancelled', 'Cancelled'));
     this.pendingReject = null;
     this.setStatus('disconnected');
   }

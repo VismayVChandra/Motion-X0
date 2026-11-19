@@ -1,23 +1,22 @@
 import { device } from '../device/instance';
+import { t, tn } from '../i18n';
 import { streaks, todayProgress } from '../progress/stats';
 import { hrefFor, navigate } from '../router';
 import { runner, setupChoice } from '../session/instance';
-import { PATTERNS } from '../session/patterns';
 import { planStore, type Plan } from '../store/plan';
 import { sessionStore, type SessionRecord } from '../store/sessions';
 import { settingsStore } from '../store/settings';
 import { Icon } from '../ui/Icon';
-import { duration, mmss, when } from '../ui/format';
-import { ComfortChip } from '../ui/session-bits';
-import { LEVEL_NAMES } from './DeviceScreen';
+import { duration, longDate, mmss, when } from '../ui/format';
+import { ComfortChip, levelName, patternShort } from '../ui/session-bits';
 
-function greeting(now = new Date()) {
+export function greetingKey(now = new Date()) {
   const h = now.getHours();
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  return h < 12 ? 'home.morning' : h < 17 ? 'home.afternoon' : 'home.evening';
 }
 
 /** Open session setup with the plan's level and duration preselected. */
-function startFromPlan(plan: Plan) {
+export function startFromPlan(plan: Plan) {
   setupChoice.value = { ...setupChoice.value, minutes: plan.durationMin, level: plan.level };
   navigate('setup');
 }
@@ -28,16 +27,14 @@ export function Home() {
   const inProgress = runner.inProgress.value;
   const connected = device.link.value === 'connected';
   const recent = sessions.slice(-4).reverse();
-  const today = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
   const firstName = plan?.patientName.split(/\s+/)[0];
 
   return (
     <section class="screen" aria-labelledby="home-title">
       <div class="stack">
-        <span class="muted">{today}</span>
+        <span class="muted">{longDate(Date.now())}</span>
         <h1 id="home-title" style={{ fontSize: '30px' }}>
-          {greeting()}
-          {firstName ? `, ${firstName}` : ''}
+          {firstName ? t(`${greetingKey()}Name`, { name: firstName }) : t(greetingKey())}
         </h1>
       </div>
 
@@ -46,31 +43,31 @@ export function Home() {
       ) : plan ? (
         <PlanCard plan={plan} sessions={sessions} />
       ) : (
-        <section class="card" style={{ gap: '14px' }} aria-label="Exercise">
-          <p class="eyebrow">Guided exercise</p>
-          <p class="lead">Gentle, motor-assisted leg exercise with exercise tracking.</p>
+        <section class="card" style={{ gap: '14px' }} aria-label={t('home.exercise')}>
+          <p class="eyebrow">{t('home.exercise')}</p>
+          <p class="lead">{t('home.exerciseLead')}</p>
           <a class="btn btn-primary btn-xl btn-block" href={hrefFor('setup')}>
             <Icon name="play" />
-            Start a session
+            {t('home.start')}
           </a>
-          <p class="muted small">No plan yet. Your therapist can set one in the therapist view.</p>
+          <p class="muted small">{t('home.noPlan')}</p>
         </section>
       )}
 
       {!connected && !inProgress && (
         <a class="link" href={hrefFor('device')}>
           <Icon name="wifiOff" size={18} />
-          Not connected. Go to Device
+          {t('home.notConnected')}
           <Icon name="chevronRight" size={18} />
         </a>
       )}
 
       <section class="stack" style={{ gap: '8px' }} aria-labelledby="recent-title">
         <div class="row-between">
-          <h2 id="recent-title">Recent sessions</h2>
+          <h2 id="recent-title">{t('home.recent')}</h2>
           {sessions.length > 0 && (
             <a class="link" href={hrefFor('history')}>
-              See all
+              {t('home.seeAll')}
               <Icon name="chevronRight" size={18} />
             </a>
           )}
@@ -83,14 +80,14 @@ export function Home() {
           </div>
         ) : (
           <div class="card muted" style={{ textAlign: 'center' }}>
-            No sessions yet. Your sessions are saved here after each one.
+            {t('home.noSessions')}
           </div>
         )}
       </section>
 
       <button type="button" class="btn btn-ghost btn-block" onClick={() => settingsStore.update({ role: 'therapist' })}>
         <Icon name="stethoscope" />
-        Therapist view
+        {t('home.therapistView')}
       </button>
     </section>
   );
@@ -98,50 +95,50 @@ export function Home() {
 
 function InProgressCard() {
   return (
-    <section class="card" style={{ gap: '14px' }} aria-label="Session in progress">
+    <section class="card" style={{ gap: '14px' }} aria-label={t('home.inProgress')}>
       <div class="row-between">
-        <p class="eyebrow">Session in progress</p>
+        <p class="eyebrow">{t('home.inProgress')}</p>
         {runner.status.value === 'paused' ? (
           <span class="badge warn">
             <Icon name="pause" />
-            Paused
+            {t('live.paused')}
           </span>
         ) : (
           <span class="badge ok">
             <span class="live-dot" style={{ width: '8px', height: '8px' }} />
-            Running
+            {t('home.running')}
           </span>
         )}
       </div>
-      <p class="plan-big">{mmss(runner.remainingMs.value)} left</p>
+      <p class="plan-big">{t('home.left', { time: mmss(runner.remainingMs.value) })}</p>
       <a class="btn btn-primary btn-xl btn-block" href={hrefFor('live')}>
         <Icon name="timer" />
-        Return to session
+        {t('home.return')}
       </a>
     </section>
   );
 }
 
 function PlanCard({ plan, sessions }: { plan: Plan; sessions: SessionRecord[] }) {
-  const t = todayProgress(sessions, plan);
+  const p = todayProgress(sessions, plan);
   const { current } = streaks(sessions, plan);
-  const segs = Array.from({ length: plan.sessionsPerDay }, (_, i) => i < t.done);
+  const segs = Array.from({ length: plan.sessionsPerDay }, (_, i) => i < p.done);
 
   return (
     <section class="card" style={{ gap: '14px' }} aria-labelledby="plan-eyebrow">
       <div class="row-between">
         <p class="eyebrow" id="plan-eyebrow">
-          Today’s plan
+          {t('home.todaysPlan')}
         </p>
         {current > 0 && (
           <span class="badge streak">
             <Icon name="flame" />
-            {current}-day streak
+            {tn('home.streak', current)}
           </span>
         )}
       </div>
       <p class="plan-big">
-        {t.complete ? 'All done for today' : `${Math.min(t.done, t.target)} of ${t.target} session${t.target > 1 ? 's' : ''} done`}
+        {p.complete ? t('home.allDone') : tn('home.doneOf', p.target, { done: Math.min(p.done, p.target) })}
       </p>
       <div class="progress-segs" aria-hidden="true">
         {segs.map((done, i) => (
@@ -149,10 +146,10 @@ function PlanCard({ plan, sessions }: { plan: Plan; sessions: SessionRecord[] })
             {done ? (
               <>
                 <Icon name="check" />
-                Done
+                {t('home.segDone')}
               </>
-            ) : i === t.done ? (
-              'Next'
+            ) : i === p.done ? (
+              t('home.segNext')
             ) : (
               ''
             )}
@@ -162,57 +159,58 @@ function PlanCard({ plan, sessions }: { plan: Plan; sessions: SessionRecord[] })
       <div class="plan-meta">
         <span>
           <Icon name="gauge" />
-          Level {plan.level} · {LEVEL_NAMES[plan.level]}
+          {t('level.label', { n: plan.level })} · {levelName(plan.level)}
         </span>
         <span>
           <Icon name="timer" />
-          {plan.durationMin} min each
+          {t('home.minEach', { n: plan.durationMin })}
         </span>
       </div>
       {plan.note && (
         <div class="card-tonal">
           <Icon name="clipboard" />
           <span>
-            <strong>From your therapist:</strong> {plan.note}
+            <strong>{t('home.fromTherapist')}</strong> {plan.note}
           </span>
         </div>
       )}
-      {t.complete ? (
+      {p.complete ? (
         <>
           <div class="done-head">
             <Icon name="circleCheck" />
-            <span>Today’s plan is complete. Well done.</span>
+            <span>{t('home.completeMsg')}</span>
           </div>
           <button type="button" class="btn btn-secondary btn-lg btn-block" onClick={() => startFromPlan(plan)}>
             <Icon name="play" />
-            Extra session
+            {t('home.extra')}
           </button>
         </>
       ) : (
         <button type="button" class="btn btn-primary btn-xl btn-block" onClick={() => startFromPlan(plan)}>
           <Icon name="play" />
-          Start next session
+          {t('home.startNext')}
         </button>
       )}
     </section>
   );
 }
 
+/** One saved session; tapping it opens the printable report. */
 export function SessionRow({ s }: { s: SessionRecord }) {
-  const extra = s.endReason === 'estop' ? ' · emergency stop' : s.endReason === 'ended_early' ? ' · ended early' : '';
+  const extra = s.endReason === 'estop' ? ` · ${t('end.estopShort')}` : s.endReason === 'ended_early' ? ` · ${t('end.earlyShort')}` : '';
   return (
-    <div class="list-item">
+    <a class="list-item list-link" href={hrefFor('report', s.id)} aria-label={`${when(s.startedAt)}. ${t('report.open')}`}>
       <span class="li-ic">
         <Icon name="activity" />
       </span>
       <div class="stack">
         <strong>{when(s.startedAt)}</strong>
         <span>
-          {duration(s.activeSec)} · Level {s.level} · {PATTERNS[s.pattern].label.split(' ')[0]}
+          {duration(s.activeSec)} · {t('level.label', { n: s.level })} · {patternShort(s.pattern)}
           {extra}
         </span>
       </div>
       <ComfortChip score={s.comfort} />
-    </div>
+    </a>
   );
 }

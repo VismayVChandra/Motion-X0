@@ -1,16 +1,17 @@
 import { useState } from 'preact/hooks';
+import { t } from '../i18n';
 import { addDays, averageComfort, comfortTrend, todayProgress, weeklyAdherence } from '../progress/stats';
+import { hrefFor } from '../router';
 import type { SpeedLevel } from '../session/patterns';
 import { MAX_SESSIONS_PER_DAY, PLAN_DURATIONS, planStore, type Plan } from '../store/plan';
 import { isHighComfortScore, sessionStore, type SessionRecord } from '../store/sessions';
 import { settingsStore } from '../store/settings';
 import { ComfortLineChart } from '../ui/charts';
 import { Icon } from '../ui/Icon';
-import { duration, when } from '../ui/format';
-import { ComfortChip } from '../ui/session-bits';
-import { LEVEL_NAMES } from './DeviceScreen';
+import { duration, shortDate, when } from '../ui/format';
+import { ComfortChip, levelName } from '../ui/session-bits';
 
-const initials = (name: string) =>
+export const initials = (name: string) =>
   name
     .split(/\s+/)
     .filter(Boolean)
@@ -26,7 +27,7 @@ export function TherapistDashboard() {
   return (
     <section class="screen" aria-labelledby="therapist-title">
       <h1 id="therapist-title" class="visually-hidden">
-        Therapist dashboard
+        {t('therapist.title')}
       </h1>
       <div class="desk-grid">
         <div class="desk-col">
@@ -35,16 +36,14 @@ export function TherapistDashboard() {
               {plan ? initials(plan.patientName) : <Icon name="user" />}
             </span>
             <div class="stack" style={{ gap: 0, flex: 1, minWidth: 0 }}>
-              <strong style={{ fontSize: '20px' }}>{plan?.patientName ?? 'No patient yet'}</strong>
+              <strong style={{ fontSize: '20px' }}>{plan?.patientName ?? t('therapist.noPatient')}</strong>
               <span class="muted small">
-                {plan
-                  ? `Plan since ${new Date(plan.startedAt).toLocaleDateString([], { day: 'numeric', month: 'short' })}`
-                  : 'Create a plan to get started'}
+                {plan ? t('therapist.planSince', { date: shortDate(plan.startedAt) }) : t('therapist.createToStart')}
               </span>
             </div>
             <span class="badge neutral">
               <Icon name="stethoscope" />
-              Therapist
+              {t('role.therapist')}
             </span>
           </div>
           <PlanForm plan={plan} />
@@ -53,13 +52,9 @@ export function TherapistDashboard() {
           {plan && <AdherenceCard plan={plan} sessions={sessions} />}
           <ComfortCard sessions={sessions} />
           <LatestSessions sessions={sessions} />
-          <button
-            type="button"
-            class="btn btn-secondary btn-block"
-            onClick={() => settingsStore.update({ role: 'patient' })}
-          >
+          <button type="button" class="btn btn-secondary btn-block" onClick={() => settingsStore.update({ role: 'patient' })}>
             <Icon name="arrowLeftRight" />
-            Switch to patient view
+            {t('therapist.toPatient')}
           </button>
         </div>
       </div>
@@ -75,6 +70,7 @@ function PlanForm({ plan }: { plan: Plan | null }) {
   const [note, setNote] = useState(plan?.note ?? '');
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const touch = () => setSaved(false);
 
   const dirty =
     !plan ||
@@ -87,7 +83,7 @@ function PlanForm({ plan }: { plan: Plan | null }) {
   const save = (e: Event) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Enter the patient’s name');
+      setError(t('therapist.nameError'));
       return;
     }
     setError(null);
@@ -107,16 +103,16 @@ function PlanForm({ plan }: { plan: Plan | null }) {
   return (
     <form class="card" aria-labelledby="plan-title" onSubmit={save} noValidate>
       <div class="row-between">
-        <h2 id="plan-title">{plan ? 'Exercise plan' : 'Create a plan'}</h2>
+        <h2 id="plan-title">{plan ? t('therapist.plan') : t('therapist.createPlan')}</h2>
         {plan && (
           <span class="muted" style={{ fontSize: '14px' }}>
-            Edited {new Date(plan.updatedAt).toLocaleDateString([], { day: 'numeric', month: 'short' })}
+            {t('therapist.edited', { date: shortDate(plan.updatedAt) })}
           </span>
         )}
       </div>
 
       <div class="field">
-        <label for="plan-name">Patient name</label>
+        <label for="plan-name">{t('therapist.name')}</label>
         <input
           id="plan-name"
           class="input"
@@ -127,7 +123,7 @@ function PlanForm({ plan }: { plan: Plan | null }) {
           aria-describedby={error ? 'plan-name-err' : undefined}
           onInput={(e) => {
             setName(e.currentTarget.value);
-            setSaved(false);
+            touch();
           }}
         />
         {error && (
@@ -138,8 +134,8 @@ function PlanForm({ plan }: { plan: Plan | null }) {
       </div>
 
       <fieldset>
-        <legend style={{ fontSize: '16px', marginBottom: '6px' }}>Speed level</legend>
-        <div class="seg" role="radiogroup" aria-label="Speed level">
+        <legend style={{ fontSize: '16px', marginBottom: '6px' }}>{t('device.speedLevel')}</legend>
+        <div class="seg" role="radiogroup" aria-label={t('device.speedLevel')}>
           {([1, 2, 3] as SpeedLevel[]).map((l) => (
             <button
               key={l}
@@ -147,22 +143,22 @@ function PlanForm({ plan }: { plan: Plan | null }) {
               class="seg-btn"
               role="radio"
               aria-checked={level === l}
-              aria-label={`Level ${l}, ${LEVEL_NAMES[l]}`}
+              aria-label={t('level.aria', { n: l, name: levelName(l) })}
               onClick={() => {
                 setLevel(l);
-                setSaved(false);
+                touch();
               }}
             >
               <span class="seg-main">{l}</span>
-              <span class="seg-sub">{LEVEL_NAMES[l]}</span>
+              <span class="seg-sub">{levelName(l)}</span>
             </button>
           ))}
         </div>
       </fieldset>
 
       <fieldset>
-        <legend style={{ fontSize: '16px', marginBottom: '6px' }}>Duration per session</legend>
-        <div class="chips" role="radiogroup" aria-label="Duration per session">
+        <legend style={{ fontSize: '16px', marginBottom: '6px' }}>{t('therapist.duration')}</legend>
+        <div class="chips" role="radiogroup" aria-label={t('therapist.duration')}>
           {PLAN_DURATIONS.map((m) => (
             <button
               key={m}
@@ -170,14 +166,14 @@ function PlanForm({ plan }: { plan: Plan | null }) {
               class="seg-btn"
               role="radio"
               aria-checked={minutes === m}
-              aria-label={`${m} minutes`}
+              aria-label={t('setup.minutesAria', { n: m })}
               onClick={() => {
                 setMinutes(m);
-                setSaved(false);
+                touch();
               }}
             >
               <span class="seg-main">{m}</span>
-              <span class="seg-sub">min</span>
+              <span class="seg-sub">{t('unit.min')}</span>
             </button>
           ))}
         </div>
@@ -185,31 +181,31 @@ function PlanForm({ plan }: { plan: Plan | null }) {
 
       <div class="field">
         <span id="perday-label" style={{ fontWeight: 650 }}>
-          Sessions per day
+          {t('therapist.perDay')}
         </span>
         <div class="stepper" role="group" aria-labelledby="perday-label">
           <button
             type="button"
-            aria-label="Fewer sessions"
+            aria-label={t('therapist.fewer')}
             disabled={perDay <= 1}
             onClick={() => {
               setPerDay(perDay - 1);
-              setSaved(false);
+              touch();
             }}
           >
             <Icon name="minus" />
           </button>
           <output aria-live="polite">
             {perDay}
-            <small>per day</small>
+            <small>{t('therapist.perDayUnit')}</small>
           </output>
           <button
             type="button"
-            aria-label="More sessions"
+            aria-label={t('therapist.more')}
             disabled={perDay >= MAX_SESSIONS_PER_DAY}
             onClick={() => {
               setPerDay(perDay + 1);
-              setSaved(false);
+              touch();
             }}
           >
             <Icon name="plus" />
@@ -219,17 +215,17 @@ function PlanForm({ plan }: { plan: Plan | null }) {
 
       <div class="field">
         <label for="plan-note">
-          Note for patient <span class="muted">(optional)</span>
+          {t('therapist.note')} <span class="muted">{t('common.optional')}</span>
         </label>
         <textarea
           id="plan-note"
           class="input"
           maxLength={300}
-          placeholder="e.g. Stop if anything feels uncomfortable."
+          placeholder={t('therapist.notePlaceholder')}
           value={note}
           onInput={(e) => {
             setNote(e.currentTarget.value);
-            setSaved(false);
+            touch();
           }}
         />
       </div>
@@ -237,18 +233,18 @@ function PlanForm({ plan }: { plan: Plan | null }) {
       {saved && !dirty ? (
         <p class="saved-msg" role="status">
           <Icon name="circleCheck" />
-          Plan saved. The patient’s home screen now shows it.
+          {t('therapist.saved')}
         </p>
       ) : (
         <div class={plan ? 'form-actions' : ''}>
           {plan && (
             <button class="btn btn-secondary" type="button" disabled={!dirty} onClick={reset}>
-              Undo changes
+              {t('therapist.undo')}
             </button>
           )}
           <button class={`btn btn-primary${plan ? '' : ' btn-block btn-lg'}`} type="submit" disabled={!dirty}>
             <Icon name="save" />
-            {plan ? 'Save plan' : 'Create plan'}
+            {plan ? t('therapist.save') : t('therapist.create')}
           </button>
         </div>
       )}
@@ -263,12 +259,12 @@ function AdherenceCard({ plan, sessions }: { plan: Plan; sessions: SessionRecord
   const avg = averageComfort(sessions, since);
   const highs = sessions.filter((s) => s.startedAt >= since && isHighComfortScore(s.comfort)).length;
   const pct = week.pct ?? 0;
-  const status = pct >= 80 ? 'On track' : pct >= 50 ? 'Some missed' : 'Needs attention';
+  const status = pct >= 80 ? t('therapist.onTrack') : pct >= 50 ? t('therapist.someMissed') : t('therapist.needsAttention');
 
   return (
     <section class="card" aria-labelledby="adh-title">
       <div class="row-between">
-        <h2 id="adh-title">Adherence this week</h2>
+        <h2 id="adh-title">{t('therapist.adherence')}</h2>
         <span class={`badge ${pct >= 80 ? 'ok' : 'warn'}`}>
           <Icon name={pct >= 80 ? 'trendingUp' : 'triangleAlert'} />
           {status}
@@ -276,11 +272,16 @@ function AdherenceCard({ plan, sessions }: { plan: Plan; sessions: SessionRecord
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
         <span class="big-pct">{pct}%</span>
-        <span class="muted">
-          {week.done} of {week.planned} sessions so far
-        </span>
+        <span class="muted">{t('therapist.doneOfPlanned', { done: week.done, planned: week.planned })}</span>
       </div>
-      <div class="meter" role="meter" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Adherence this week">
+      <div
+        class="meter"
+        role="meter"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={t('therapist.adherence')}
+      >
         <div style={{ width: `${pct}%` }} />
       </div>
       <div class="mini-stats">
@@ -288,18 +289,18 @@ function AdherenceCard({ plan, sessions }: { plan: Plan; sessions: SessionRecord
           <strong>
             {today.done}/{today.target}
           </strong>
-          <span>Sessions today</span>
+          <span>{t('therapist.today')}</span>
         </div>
         <div class="mini-stat">
           <strong>{avg ?? '–'}</strong>
-          <span>Avg. comfort, 7 days (1–10)</span>
+          <span>{t('therapist.avgComfort')}</span>
         </div>
         <div class={`mini-stat${highs ? ' warn' : ''}`} style={{ gridColumn: '1 / -1' }}>
           <strong>
             {highs > 0 && <Icon name="triangleAlert" />}
             {highs}
           </strong>
-          <span>High comfort scores (7+) to review, 7 days</span>
+          <span>{t('therapist.highScores')}</span>
         </div>
       </div>
     </section>
@@ -312,11 +313,11 @@ function ComfortCard({ sessions }: { sessions: SessionRecord[] }) {
     <section class="card" aria-labelledby="ct-title">
       <div class="chart-head">
         <div>
-          <h2 id="ct-title">Comfort score trend</h2>
-          <p>Last {points.length || 10} scored sessions · lower is more comfortable</p>
+          <h2 id="ct-title">{t('history.comfort')}</h2>
+          <p>{t('therapist.comfortSub', { n: points.length || 10 })}</p>
         </div>
       </div>
-      {points.length ? <ComfortLineChart points={points} /> : <p class="muted">No comfort scores yet.</p>}
+      {points.length ? <ComfortLineChart points={points} /> : <p class="muted">{t('history.noScores')}</p>}
     </section>
   );
 }
@@ -325,26 +326,26 @@ function LatestSessions({ sessions }: { sessions: SessionRecord[] }) {
   const latest = sessions.slice(-6).reverse();
   return (
     <section class="stack" style={{ gap: '8px' }} aria-labelledby="latest-title">
-      <h2 id="latest-title">Latest sessions</h2>
+      <h2 id="latest-title">{t('therapist.latest')}</h2>
       {latest.length ? (
         <div class="list">
           {latest.map((s) => (
-            <div class="list-item" key={s.id}>
+            <a class="list-item list-link" key={s.id} href={hrefFor('report', s.id)}>
               <div class="stack">
                 <strong>{when(s.startedAt)}</strong>
                 <span>
-                  {duration(s.activeSec)} · Level {s.level} · {s.cycles} cycles
-                  {s.endReason === 'ended_early' ? ' · ended early' : s.endReason === 'estop' ? ' · emergency stop' : ''}
+                  {duration(s.activeSec)} · {t('level.label', { n: s.level })} · {t('therapist.cycles', { n: s.cycles })}
+                  {s.endReason === 'ended_early' ? ` · ${t('end.earlyShort')}` : s.endReason === 'estop' ? ` · ${t('end.estopShort')}` : ''}
                 </span>
                 {s.note && <span class="note-text">“{s.note}”</span>}
               </div>
               <ComfortChip score={s.comfort} />
-            </div>
+            </a>
           ))}
         </div>
       ) : (
         <div class="card muted" style={{ textAlign: 'center' }}>
-          No sessions yet.
+          {t('therapist.noSessions')}
         </div>
       )}
     </section>

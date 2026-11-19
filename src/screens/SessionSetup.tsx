@@ -1,11 +1,11 @@
 import { device } from '../device/instance';
-import { navigate, hrefFor } from '../router';
+import { t } from '../i18n';
+import { hrefFor, navigate } from '../router';
 import { runner, setupChoice } from '../session/instance';
-import { PATTERN_IDS, PATTERNS, type SpeedLevel } from '../session/patterns';
+import { PATTERN_IDS, type SpeedLevel } from '../session/patterns';
 import { planStore } from '../store/plan';
 import { Icon } from '../ui/Icon';
-import { PatternIcon } from '../ui/session-bits';
-import { LEVEL_NAMES } from './DeviceScreen';
+import { levelName, PatternIcon, patternDesc, patternLabel } from '../ui/session-bits';
 
 export const DURATION_OPTIONS = [2, 5, 10, 15, 20] as const;
 
@@ -22,10 +22,10 @@ export function SessionSetup() {
   if (block === 'already_running') {
     return (
       <section class="screen">
-        <h1>A session is running</h1>
+        <h1>{t('setup.running')}</h1>
         <a class="btn btn-primary btn-xl btn-block" href={hrefFor('live')}>
           <Icon name="timer" />
-          Return to session
+          {t('home.return')}
         </a>
       </section>
     );
@@ -35,12 +35,13 @@ export function SessionSetup() {
     const ok = runner.start({ durationSec: choice.minutes * 60, level: choice.level, pattern: choice.pattern });
     if (ok) navigate('live');
   };
+  const planText = plan ? t('setup.planIs', { level: plan.level, min: plan.durationMin }) : '';
 
   return (
     <section class="screen" aria-labelledby="setup-title">
       <div class="stack">
-        <p class="eyebrow">New session</p>
-        <h1 id="setup-title">Set up your session</h1>
+        <p class="eyebrow">{t('setup.eyebrow')}</p>
+        <h1 id="setup-title">{t('setup.title')}</h1>
       </div>
 
       {plan &&
@@ -48,37 +49,27 @@ export function SessionSetup() {
           <div class="card-tonal">
             <Icon name="clipboard" />
             <span>
-              Your therapist’s plan is{' '}
-              <strong>
-                Level {plan.level} · {plan.durationMin} min
-              </strong>
-              . It’s already selected.
+              {planText} {t('setup.planSelected')}
             </span>
           </div>
         ) : (
           <div class="card-tonal" style={{ alignItems: 'center' }}>
             <Icon name="clipboard" />
-            <span style={{ flex: 1 }}>
-              Your therapist’s plan is{' '}
-              <strong>
-                Level {plan.level} · {plan.durationMin} min
-              </strong>
-              .
-            </span>
+            <span style={{ flex: 1 }}>{planText}</span>
             <button
               type="button"
               class="btn btn-tonal"
-              style={{ minHeight: '44px', padding: '8px 14px', background: 'var(--surface)' }}
+              style={{ minHeight: '48px', padding: '8px 14px', background: 'var(--surface)' }}
               onClick={() => set({ level: plan.level, minutes: plan.durationMin })}
             >
-              Use plan
+              {t('setup.usePlan')}
             </button>
           </div>
         ))}
 
       <fieldset>
-        <legend>How long?</legend>
-        <div class="chips" role="radiogroup" aria-label="Duration">
+        <legend>{t('setup.howLong')}</legend>
+        <div class="chips" role="radiogroup" aria-label={t('setup.duration')}>
           {DURATION_OPTIONS.map((m) => (
             <button
               key={m}
@@ -86,19 +77,19 @@ export function SessionSetup() {
               class="seg-btn"
               role="radio"
               aria-checked={choice.minutes === m}
-              aria-label={`${m} minutes`}
+              aria-label={t('setup.minutesAria', { n: m })}
               onClick={() => set({ minutes: m })}
             >
               <span class="seg-main">{m}</span>
-              <span class="seg-sub">min</span>
+              <span class="seg-sub">{t('unit.min')}</span>
             </button>
           ))}
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>Speed level</legend>
-        <div class="seg" role="radiogroup" aria-label="Speed level">
+        <legend>{t('device.speedLevel')}</legend>
+        <div class="seg" role="radiogroup" aria-label={t('device.speedLevel')}>
           {([1, 2, 3] as SpeedLevel[]).map((l) => (
             <button
               key={l}
@@ -106,27 +97,27 @@ export function SessionSetup() {
               class="seg-btn"
               role="radio"
               aria-checked={choice.level === l}
-              aria-label={`Level ${l}, ${LEVEL_NAMES[l]}`}
+              aria-label={t('level.aria', { n: l, name: levelName(l) })}
               onClick={() => set({ level: l })}
             >
               <span class="seg-main">{l}</span>
-              <span class="seg-sub">{LEVEL_NAMES[l]}</span>
+              <span class="seg-sub">{levelName(l)}</span>
             </button>
           ))}
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>Pattern</legend>
-        <div class="stack" style={{ gap: '8px' }} role="radiogroup" aria-label="Pattern">
+        <legend>{t('setup.pattern')}</legend>
+        <div class="stack" style={{ gap: '8px' }} role="radiogroup" aria-label={t('setup.pattern')}>
           {PATTERN_IDS.map((p) => {
             const sel = choice.pattern === p;
             return (
               <button key={p} type="button" class="opt" role="radio" aria-checked={sel} onClick={() => set({ pattern: p })}>
                 <PatternIcon pattern={p} />
                 <span class="opt-text">
-                  <strong>{PATTERNS[p].label}</strong>
-                  <span>{PATTERNS[p].desc}</span>
+                  <strong>{patternLabel(p)}</strong>
+                  <span>{patternDesc(p)}</span>
                 </span>
                 <span class="opt-check">{sel && <Icon name="check" />}</span>
               </button>
@@ -136,14 +127,14 @@ export function SessionSetup() {
       </fieldset>
 
       <p class="muted small" style={{ textAlign: 'center' }}>
-        {choice.minutes} min · Level {choice.level} · {PATTERNS[choice.pattern].label}
+        {t('setup.summary', { min: choice.minutes, level: choice.level, pattern: patternLabel(choice.pattern) })}
       </p>
 
       {block === 'not_connected' && (
         <div class="card-tonal">
           <Icon name="wifiOff" />
           <span>
-            Connect to the device first. <a href={hrefFor('device')}>Go to Device</a>
+            {t('setup.connectFirst')} <a href={hrefFor('device')}>{t('setup.goDevice')}</a>
           </span>
         </div>
       )}
@@ -151,9 +142,9 @@ export function SessionSetup() {
         <div class="advisory" role="status">
           <Icon name="triangleAlert" />
           <div>
-            <strong>Emergency stop is on</strong>
+            <strong>{t('device.estopTitle')}</strong>
             <p>
-              Reset it on the <a href={hrefFor('device')}>Device</a> screen before starting.
+              {t('setup.estopReset')} <a href={hrefFor('device')}>{t('setup.goDevice')}</a>
             </p>
           </div>
         </div>
@@ -161,7 +152,7 @@ export function SessionSetup() {
 
       <button type="button" class="btn btn-primary btn-xl btn-block" disabled={block !== null} onClick={start}>
         <Icon name="play" />
-        Start session
+        {t('setup.start')}
       </button>
     </section>
   );
