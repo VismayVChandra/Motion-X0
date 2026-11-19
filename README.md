@@ -25,7 +25,7 @@ npm run build    # production build in dist/
 ## Status
 
 - [x] Wave 0: foundations (tooling, protocol, DeviceClient, SimDevice, settings, app shell)
-- [ ] Wave 1: device control and safety
+- [x] Wave 1: device control and safety (v0 design, connect / control / connection-lost screens, heartbeat, auto-reconnect, e-stop)
 - [ ] Wave 2: session flow
 - [ ] Wave 3: therapist and progress
 - [ ] Wave 4: accessibility, languages, report

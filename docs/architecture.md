@@ -32,6 +32,7 @@
 | Routing | Hand-rolled hash router | No dependency; hash URLs work from a static file server. |
 | Tests | Vitest | Logic only: SimDevice, protocol parsing, stores, later plan/adherence maths. |
 | Charts (Wave 3) | Hand-rolled SVG | No library weight. |
+| Design | v0 design system (tokens, components) ported to plain CSS | Icons bundled inline (Lucide paths); system fonts only, so it works offline. |
 
 Bundle budget: **< 300 KB gzipped** (expected well under 100 KB).
 
@@ -44,10 +45,13 @@ src/
     protocol.ts    encode commands, parse/validate device messages, nominal rpm
     motorModel.ts  pure model of the firmware (ramp, heartbeat timeout, faults)
     sim.ts         SimDevice: MotorModel + timers behind the DeviceClient interface
-    real.ts        RealDevice: WebSocket client (Wave 1)
+    real.ts        RealDevice: WebSocket client (connect timeout, mixed-content check)
+    url.ts         turn "192.168.4.1" into ws://192.168.4.1/ws
+    controller.ts  DeviceController: heartbeat, lost-link watchdog, reconnect backoff, e-stop retries
+    instance.ts    app-wide controller wired to settings (Demo mode / address)
   store/
     settings.ts    persisted settings (theme, demo mode, device URL, role, language)
-  ui/              shared components (header, nav, notice)
+  ui/              shell (status badge, e-stop bar, notice, tabs), icons, controls
   screens/         one file per screen
   app.tsx          shell + router
   main.tsx         entry
@@ -75,3 +79,18 @@ firmware/          PlatformIO project (Wave 5)
 | Smooth ramps | Firmware / `MotorModel` |
 | Emergency Stop on every session screen | App UI (Wave 1+) |
 | Not-a-medical-device notice | App shell footer, always visible |
+
+## Device controller (Wave 1)
+
+ sits between the screens and the active :
+
+| Behaviour | Detail |
+|---|---|
+| Heartbeat |  every 500 ms whenever connected (always, not only in sessions: simpler and harmless). |
+| Lost link | No  for 2 s → link  → "Connection lost: motor stopped". A real socket silent for 6 s is closed and reopened. |
+| Reconnect | Automatic, backoff 1 s → 2 s → 4 s → 5 s (then every 5 s). "Try now" skips the wait. |
+| E-stop | Sent immediately, then re-sent every 200 ms until the device reports  (max ~2 s). |
+| Disconnect / page close | Sends  first if the motor is active. |
+| Auto-connect | On launch, in both modes (the app is normally opened from the device itself). |
+
+The emergency Stop bar is part of the app shell, so it appears on every tab while the motor is running or ramping.
