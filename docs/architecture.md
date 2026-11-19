@@ -82,15 +82,15 @@ firmware/          PlatformIO project (Wave 5)
 
 ## Device controller (Wave 1)
 
- sits between the screens and the active :
+`DeviceController` sits between the screens and the active `DeviceClient`:
 
 | Behaviour | Detail |
 |---|---|
-| Heartbeat |  every 500 ms whenever connected (always, not only in sessions: simpler and harmless). |
-| Lost link | No  for 2 s → link  → "Connection lost: motor stopped". A real socket silent for 6 s is closed and reopened. |
+| Heartbeat | `ping` every 500 ms whenever connected (always, not only in sessions: simpler and harmless). |
+| Lost link | No `state` for 2 s → link `lost` → "Connection lost: motor stopped". A real socket silent for 6 s is closed and reopened. |
 | Reconnect | Automatic, backoff 1 s → 2 s → 4 s → 5 s (then every 5 s). "Try now" skips the wait. |
-| E-stop | Sent immediately, then re-sent every 200 ms until the device reports  (max ~2 s). |
-| Disconnect / page close | Sends  first if the motor is active. |
+| E-stop | Sent immediately, then re-sent every 200 ms until the device reports `fault: "estop"` (max ~2 s). |
+| Disconnect / page close | Sends `stop` first if the motor is active. |
 | Auto-connect | On launch, in both modes (the app is normally opened from the device itself). |
 
 The emergency Stop bar is part of the app shell, so it appears on every tab while the motor is running or ramping.
