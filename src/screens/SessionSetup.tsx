@@ -2,6 +2,7 @@ import { device } from '../device/instance';
 import { navigate, hrefFor } from '../router';
 import { runner, setupChoice } from '../session/instance';
 import { PATTERN_IDS, PATTERNS, type SpeedLevel } from '../session/patterns';
+import { planStore } from '../store/plan';
 import { Icon } from '../ui/Icon';
 import { PatternIcon } from '../ui/session-bits';
 import { LEVEL_NAMES } from './DeviceScreen';
@@ -10,6 +11,7 @@ export const DURATION_OPTIONS = [2, 5, 10, 15, 20] as const;
 
 export function SessionSetup() {
   const choice = setupChoice.value;
+  const plan = planStore.plan.value;
   const set = (patch: Partial<typeof choice>) => (setupChoice.value = { ...choice, ...patch });
   // Read signals so the screen updates as the connection changes.
   void device.link.value;
@@ -40,6 +42,39 @@ export function SessionSetup() {
         <p class="eyebrow">New session</p>
         <h1 id="setup-title">Set up your session</h1>
       </div>
+
+      {plan &&
+        (choice.level === plan.level && choice.minutes === plan.durationMin ? (
+          <div class="card-tonal">
+            <Icon name="clipboard" />
+            <span>
+              Your therapist’s plan is{' '}
+              <strong>
+                Level {plan.level} · {plan.durationMin} min
+              </strong>
+              . It’s already selected.
+            </span>
+          </div>
+        ) : (
+          <div class="card-tonal" style={{ alignItems: 'center' }}>
+            <Icon name="clipboard" />
+            <span style={{ flex: 1 }}>
+              Your therapist’s plan is{' '}
+              <strong>
+                Level {plan.level} · {plan.durationMin} min
+              </strong>
+              .
+            </span>
+            <button
+              type="button"
+              class="btn btn-tonal"
+              style={{ minHeight: '44px', padding: '8px 14px', background: 'var(--surface)' }}
+              onClick={() => set({ level: plan.level, minutes: plan.durationMin })}
+            >
+              Use plan
+            </button>
+          </div>
+        ))}
 
       <fieldset>
         <legend>How long?</legend>

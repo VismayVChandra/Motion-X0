@@ -68,9 +68,10 @@ export function EStopBar() {
 export function Shell({ children }: { children: ComponentChildren }) {
   const theme = effectiveTheme(settingsStore.settings.value.theme);
   const current = TAB_FOR[route.value];
+  const wide = route.value === 'home' && settingsStore.settings.value.role === 'therapist';
 
   return (
-    <div class="app">
+    <div class={`app${wide ? ' wide' : ''}`}>
       <header class="topbar">
         <a class="logo" href={hrefFor('home')} aria-label="MOTION-X home">
           <span class="logo-mark">

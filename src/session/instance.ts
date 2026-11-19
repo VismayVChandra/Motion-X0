@@ -1,6 +1,7 @@
-import { signal } from '@preact/signals';
+import { effect, signal, untracked } from '@preact/signals';
 import { device } from '../device/instance';
 import { navigate } from '../router';
+import { planStore } from '../store/plan';
 import { sessionStore } from '../store/sessions';
 import { SessionRunner } from './runner';
 import type { PatternId, SpeedLevel } from './patterns';
@@ -26,6 +27,16 @@ let started = false;
 export function startSessions(): void {
   if (started) return;
   started = true;
+
+  // Whenever the therapist's plan is set or changed, preselect it in session setup.
+  effect(() => {
+    const plan = planStore.plan.value;
+    if (!plan) return;
+    untracked(() => {
+      setupChoice.value = { ...setupChoice.value, minutes: plan.durationMin, level: plan.level };
+    });
+  });
+
   // Closing or reloading mid-session still saves what was done.
   window.addEventListener('pagehide', () => runner.end());
 }

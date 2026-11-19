@@ -56,6 +56,9 @@ src/
   store/
     settings.ts    persisted settings (theme, demo mode, device URL, role, language)
     sessions.ts    saved sessions + comfort scores (localStorage)
+    plan.ts        therapist plan for the patient (localStorage)
+  progress/
+    stats.ts       today vs plan, minutes per day, weekly adherence, streaks, comfort trend
   ui/              shell (status badge, e-stop bar, notice, tabs), icons, controls
   screens/         one file per screen
   app.tsx          shell + router
@@ -113,3 +116,14 @@ The emergency Stop bar is part of the app shell, so it appears on every tab whil
 | Saving | Every session is saved the moment it ends (completed, ended early, e-stop, or page closed). The comfort score (1–10) and note are added afterwards; skipping leaves `comfort: null`. |
 | Comfort advice | Score ≥ 7 shows "Please stop and consult your therapist before your next session." |
 | Storage | localStorage (`motionx.sessions.v1`), validated on load. Records are ~250 bytes, so years of sessions fit. |
+
+## Plans and progress (Wave 3)
+
+| Topic | Rule |
+|---|---|
+| Roles | Local switch (Settings, or the buttons on Home). Therapist sees the dashboard on the Home tab; patient sees today's plan. No login. |
+| Plan | One patient per device: name, level, duration (2/5/10/15/20 min), sessions per day (1–6), optional note. Editing keeps the original start date. |
+| Counting | A session counts toward the plan if it lasted at least 80 % of the prescribed time. |
+| Adherence | Per week (Monday start): sum over days of min(done, target) ÷ (target × days covered). Only days from the plan start up to today count. |
+| Streak | Consecutive days meeting the daily target (any session without a plan). An unfinished today does not break it. |
+| Charts | Hand-rolled: minutes per day (7 or 30 days, goal line = duration × sessions per day), weekly adherence (4 or 8 weeks), comfort trend (threshold line at 7). Each has a text summary for screen readers. |
