@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { device } from '../device/instance';
-import { hrefFor, route, type Route } from '../router';
+import { hrefFor, route, TAB_FOR, type Route } from '../router';
 import { settingsStore } from '../store/settings';
 import { Icon, type IconName } from './Icon';
 import { effectiveTheme } from './theme';
@@ -67,7 +67,7 @@ export function EStopBar() {
 
 export function Shell({ children }: { children: ComponentChildren }) {
   const theme = effectiveTheme(settingsStore.settings.value.theme);
-  const current = route.value;
+  const current = TAB_FOR[route.value];
 
   return (
     <div class="app">

@@ -49,8 +49,13 @@ src/
     url.ts         turn "192.168.4.1" into ws://192.168.4.1/ws
     controller.ts  DeviceController: heartbeat, lost-link watchdog, reconnect backoff, e-stop retries
     instance.ts    app-wide controller wired to settings (Demo mode / address)
+  session/
+    patterns.ts    pattern → timed phases (levels), cycle counting
+    runner.ts      SessionRunner: timer, phase levels, pause/auto-pause, result
+    instance.ts    app-wide runner; saves every finished session
   store/
     settings.ts    persisted settings (theme, demo mode, device URL, role, language)
+    sessions.ts    saved sessions + comfort scores (localStorage)
   ui/              shell (status badge, e-stop bar, notice, tabs), icons, controls
   screens/         one file per screen
   app.tsx          shell + router
@@ -94,3 +99,17 @@ firmware/          PlatformIO project (Wave 5)
 | Auto-connect | On launch, in both modes (the app is normally opened from the device itself). |
 
 The emergency Stop bar is part of the app shell, so it appears on every tab while the motor is running or ramping.
+
+## Sessions (Wave 2)
+
+| Topic | Rule |
+|---|---|
+| Durations | 2, 5, 10, 15, 20 min (2 min is there for quick demos). |
+| Patterns | Constant · Warm-up → Hold → Cool-down (20 % / 60 % / 20 %, edges one level lower, never below 1) · Intervals (busy at the chosen level, rest at level 1; 30 s spells up to 5 min, 60 s above). |
+| Timer | Counts only active (unpaused) time. Gaps over 1 s (browser asleep) are not counted. |
+| Cycles | Integral of rpm over running time; uses the nominal rpm per level when no hall sensor is fitted. |
+| Auto-pause | Link lost → paused ("Connection lost: motor stopped"). Device target drops to 0 without the app asking (IR remote, device safety stop) → paused. Resume is manual. |
+| Emergency stop | Ends the session; saved with `endReason: "estop"`. The latch is reset on the Device screen. |
+| Saving | Every session is saved the moment it ends (completed, ended early, e-stop, or page closed). The comfort score (1–10) and note are added afterwards; skipping leaves `comfort: null`. |
+| Comfort advice | Score ≥ 7 shows "Please stop and consult your therapist before your next session." |
+| Storage | localStorage (`motionx.sessions.v1`), validated on load. Records are ~250 bytes, so years of sessions fit. |

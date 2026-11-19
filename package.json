@@ -1,7 +1,7 @@
 {
   "name": "motion-x",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "MOTION-X web app: exercise tracking for a motor-assisted lower-limb rehab prototype",
   "scripts": {
