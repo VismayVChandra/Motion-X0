@@ -7,3 +7,4 @@ coverage/
 dist-device/
 firmware/motionx/data/
 firmware/.pio/
+firmware/motionx/build/
