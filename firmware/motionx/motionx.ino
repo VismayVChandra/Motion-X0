@@ -338,11 +338,13 @@ void setup() {
   Serial.begin(115200);
   delay(50);
   Serial.printf("\n\nMOTION-X firmware %s\nNot a medical device. Prototype. Use under supervision.\n", FW_VERSION);
+  Serial.flush();
 
   // 1) Motor first: stopped, ESC arming.
   escBegin();
   motor.armedAtMs = millis() + ESC_ARM_MS;
   Serial.printf("[esc] arming: holding %u us for %u ms\n", ESC_STOP_US, ESC_ARM_MS);
+  Serial.flush();
 
   cmdQueue = xQueueCreate(16, sizeof(Cmd));
 
@@ -361,9 +363,16 @@ void setup() {
   // 3) IR receiver.
   IrReceiver.begin(PIN_IR, DISABLE_LED_FEEDBACK);
 
-  // 4) Wi-Fi access point.
+  // 4) Wi-Fi access point. The radio start draws a current spike; reduced TX power and a
+  //    short settle delay help boards on weak USB supplies. Logs are flushed so a brownout
+  //    reset still shows how far startup got.
+  Serial.println(F("[wifi] starting radio..."));
+  Serial.flush();
+  delay(200);
   WiFi.mode(WIFI_AP);
+  WiFi.setTxPower(AP_TX_POWER);
   WiFi.softAP(AP_SSID, AP_PASSWORD, AP_CHANNEL, 0, AP_MAX_CLIENTS);
+  WiFi.setTxPower(AP_TX_POWER);
   WiFi.setSleep(false);  // lower latency for the heartbeat
   IPAddress ip = WiFi.softAPIP();
   Serial.printf("[wifi] AP \"%s\" at %s\n", AP_SSID, ip.toString().c_str());

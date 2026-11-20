@@ -12,6 +12,9 @@
 #define AP_PASSWORD  "motionx123"   // CHANGE ME. 8+ characters. Put it on a label on the machine.
 #define AP_CHANNEL   6
 #define AP_MAX_CLIENTS 4            // phone + laptop + spare
+// Transmit power. 11 dBm covers a room and keeps the start-up current spike small
+// (helps on weak USB supplies). Options: WIFI_POWER_8_5dBm ... WIFI_POWER_19_5dBm.
+#define AP_TX_POWER  WIFI_POWER_11dBm
 
 // ---------------------------------------------------------------- Pins (CHANGE to match your wiring)
 #define PIN_ESC      18   // ESC signal wire (servo-style PWM)
