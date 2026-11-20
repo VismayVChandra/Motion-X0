@@ -7,7 +7,8 @@ import { Icon } from '../ui/Icon';
 import { mmss } from '../ui/format';
 import { Notice, Topbar } from '../ui/Shell';
 import { levelName } from '../ui/session-bits';
-import { EstopAlarm } from './DeviceScreen';
+import { EstopAlarm, NotReadyNotice } from './DeviceScreen';
+import { isNotReadyFault } from '../session/runner';
 import { PauseBanner, ProgressRing } from './LiveSession';
 import { SessionDone } from './SessionDone';
 
@@ -67,6 +68,14 @@ function SimpleControl() {
     return (
       <section class="simple">
         <EstopAlarm running={st.running} />
+      </section>
+    );
+  }
+
+  if (isNotReadyFault(st.fault) && !inProgress) {
+    return (
+      <section class="simple">
+        <NotReadyNotice fault={st.fault} />
       </section>
     );
   }

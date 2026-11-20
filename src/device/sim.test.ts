@@ -172,6 +172,17 @@ describe('SimDevice safety rules', () => {
     expect(sim.getState()?.running).toBe(false);
   });
 
+  it('after a heartbeat timeout, the IR remote at the machine can start the motor again', async () => {
+    await connected();
+    sim.send({ cmd: 'set_speed', level: 1 });
+    await runWithHeartbeat(1500);
+    await vi.advanceTimersByTimeAsync(4000); // app silent → timeout, motor stops
+    expect(sim.getMotorOutput()).toBe(0);
+    sim.pressIr(1);
+    await vi.advanceTimersByTimeAsync(3000); // no app heartbeat needed for IR control
+    expect(sim.getState()).toMatchObject({ running: true, fault: null, source: 'ir' });
+  });
+
   it('IR cannot clear an estop latch', async () => {
     await connected();
     sim.send({ cmd: 'estop' });

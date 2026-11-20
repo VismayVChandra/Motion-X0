@@ -1,5 +1,5 @@
 import { t, tn } from '../i18n';
-import { comfortTrend, dailyMinutes, streaks, todayProgress, weeklyAdherence } from '../progress/stats';
+import { comfortTrend, dailyMinutes, startOfDay, streaks, todayProgress, weeklyAdherence } from '../progress/stats';
 import { hrefFor, routeParam } from '../router';
 import { planStore } from '../store/plan';
 import { isHighComfortScore, sessionStore } from '../store/sessions';
@@ -29,11 +29,13 @@ export function Report() {
   // Progress figures as of the day of this session.
   const asOf = rec.endedAt;
   const upTo = sessions.filter((s) => s.startedAt <= asOf);
-  const week = plan ? weeklyAdherence(upTo, plan, 1, asOf)[0] : null;
-  const day = plan ? todayProgress(upTo, plan, asOf) : null;
-  const streak = streaks(upTo, plan, asOf).current;
+  // Only use the plan if it already existed when this session was recorded.
+  const activePlan = plan && startOfDay(plan.startedAt) <= asOf ? plan : null;
+  const week = activePlan ? weeklyAdherence(upTo, activePlan, 1, asOf)[0] : null;
+  const day = activePlan ? todayProgress(upTo, activePlan, asOf) : null;
+  const streak = streaks(upTo, activePlan, asOf).current;
   const minutes = dailyMinutes(upTo, 7, asOf);
-  const goal = plan ? plan.durationMin * plan.sessionsPerDay : undefined;
+  const goal = activePlan ? activePlan.durationMin * activePlan.sessionsPerDay : undefined;
   const comfort = comfortTrend(upTo, 10);
 
   const rows: [string, string][] = [
@@ -115,13 +117,13 @@ export function Report() {
             {rec.note && <p class="note-text">“{rec.note}”</p>}
 
             <h2 style={{ marginTop: '14px' }}>{t('report.plan')}</h2>
-            {plan && week && day ? (
+            {activePlan && week && day ? (
               <dl class="report-dl">
                 <div>
                   <dt>{t('report.prescribed')}</dt>
                   <dd>
-                    {t('report.planLine', { level: plan.level, min: plan.durationMin })} ·{' '}
-                    {tn('history.perDay', plan.sessionsPerDay)}
+                    {t('report.planLine', { level: activePlan.level, min: activePlan.durationMin })} ·{' '}
+                    {tn('history.perDay', activePlan.sessionsPerDay)}
                   </dd>
                 </div>
                 <div>
@@ -131,7 +133,7 @@ export function Report() {
                 <div>
                   <dt>{t('report.weekAdherence')}</dt>
                   <dd>
-                    {week.pct ?? 0}% ({t('therapist.doneOfPlanned', { done: week.done, planned: week.planned })})
+                    {week.pct === null ? '–' : `${week.pct}%`} ({t('therapist.doneOfPlanned', { done: week.done, planned: week.planned })})
                   </dd>
                 </div>
                 <div>

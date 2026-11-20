@@ -57,7 +57,9 @@ export interface SessionStore {
   add(result: SessionResult): SessionRecord;
   update(id: string, patch: Partial<Pick<SessionRecord, 'comfort' | 'note'>>): void;
   get(id: string): SessionRecord | undefined;
-  /** Remove everything (used by tests and a future "clear data" option). */
+  /** Replace all sessions (sample data). Records are validated. */
+  replaceAll(records: SessionRecord[]): void;
+  /** Remove every saved session. */
   clear(): void;
 }
 
@@ -118,6 +120,13 @@ export function createSessionStore(storage: KeyValueStorage | null = safeStorage
     },
     get(id) {
       return sessions.value.find((s) => s.id === id);
+    },
+    replaceAll(records) {
+      sessions.value = records
+        .map(sanitizeRecord)
+        .filter((r): r is SessionRecord => r !== null)
+        .sort((a, b) => a.startedAt - b.startedAt);
+      persist();
     },
     clear() {
       sessions.value = [];

@@ -50,6 +50,8 @@ export interface PlanStore {
   readonly plan: Signal<Plan | null>;
   /** Create or update. Keeps the original start date when editing. Returns false if invalid. */
   save(input: PlanInput): boolean;
+  /** Set a complete plan as-is (sample data), keeping its dates. */
+  restore(plan: Plan): boolean;
   clear(): void;
 }
 
@@ -83,6 +85,13 @@ export function createPlanStore(storage: KeyValueStorage | null = safeStorage())
     save(input) {
       const now = Date.now();
       const next = sanitizePlan({ ...input, startedAt: plan.value?.startedAt ?? now, updatedAt: now });
+      if (!next) return false;
+      plan.value = next;
+      persist();
+      return true;
+    },
+    restore(p) {
+      const next = sanitizePlan(p);
       if (!next) return false;
       plan.value = next;
       persist();

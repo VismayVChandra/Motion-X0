@@ -19,6 +19,8 @@ export interface Settings {
   highContrast: boolean;
   /** Spoken prompts (session started, slowing down, finished). */
   voice: boolean;
+  /** The quick-start card on Home has been dismissed. */
+  guideSeen: boolean;
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
@@ -31,6 +33,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   simpleMode: false,
   highContrast: false,
   voice: false,
+  guideSeen: false,
 };
 
 export const SETTINGS_KEY = 'motionx.settings.v1';
@@ -54,6 +57,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     simpleMode: typeof r.simpleMode === 'boolean' ? r.simpleMode : DEFAULT_SETTINGS.simpleMode,
     highContrast: typeof r.highContrast === 'boolean' ? r.highContrast : DEFAULT_SETTINGS.highContrast,
     voice: typeof r.voice === 'boolean' ? r.voice : DEFAULT_SETTINGS.voice,
+    guideSeen: typeof r.guideSeen === 'boolean' ? r.guideSeen : DEFAULT_SETTINGS.guideSeen,
   };
 }
 

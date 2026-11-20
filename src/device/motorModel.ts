@@ -65,10 +65,9 @@ export class MotorModel {
           return;
         }
         if (this.fault === 'estop') return; // latched until reset
-        if (this.fault === 'heartbeat_timeout') {
-          if (source !== 'app') return;
-          this.fault = null; // app is back and asked again
-        }
+        // A deliberate new speed request (app back online, or the IR remote at the machine)
+        // clears a heartbeat timeout. The e-stop latch above is never cleared this way.
+        if (this.fault === 'heartbeat_timeout') this.fault = null;
         if (this.fault !== null) return;
         this.target = cmd.level;
         this.source = source;

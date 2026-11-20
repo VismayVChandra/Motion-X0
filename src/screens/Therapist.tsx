@@ -29,23 +29,23 @@ export function TherapistDashboard() {
       <h1 id="therapist-title" class="visually-hidden">
         {t('therapist.title')}
       </h1>
-      <div class="desk-grid">
+      <div class="patient-head">
+        <span class="avatar" aria-hidden="true">
+          {plan ? initials(plan.patientName) : <Icon name="user" />}
+        </span>
+        <div class="stack" style={{ gap: 0, flex: 1, minWidth: 0 }}>
+          <strong style={{ fontSize: '20px' }}>{plan?.patientName ?? t('therapist.noPatient')}</strong>
+          <span class="muted small">
+            {plan ? t('therapist.planSince', { date: shortDate(plan.startedAt) }) : t('therapist.createToStart')}
+          </span>
+        </div>
+        <span class="badge neutral">
+          <Icon name="stethoscope" />
+          {t('role.therapist')}
+        </span>
+      </div>
+      <div class={`desk-grid${plan ? ' summary-first' : ''}`}>
         <div class="desk-col">
-          <div class="patient-head">
-            <span class="avatar" aria-hidden="true">
-              {plan ? initials(plan.patientName) : <Icon name="user" />}
-            </span>
-            <div class="stack" style={{ gap: 0, flex: 1, minWidth: 0 }}>
-              <strong style={{ fontSize: '20px' }}>{plan?.patientName ?? t('therapist.noPatient')}</strong>
-              <span class="muted small">
-                {plan ? t('therapist.planSince', { date: shortDate(plan.startedAt) }) : t('therapist.createToStart')}
-              </span>
-            </div>
-            <span class="badge neutral">
-              <Icon name="stethoscope" />
-              {t('role.therapist')}
-            </span>
-          </div>
           <PlanForm plan={plan} />
         </div>
         <div class="desk-col">
@@ -258,20 +258,27 @@ function AdherenceCard({ plan, sessions }: { plan: Plan; sessions: SessionRecord
   const since = addDays(Date.now(), -6);
   const avg = averageComfort(sessions, since);
   const highs = sessions.filter((s) => s.startedAt >= since && isHighComfortScore(s.comfort)).length;
+  const noData = week.pct === null;
   const pct = week.pct ?? 0;
-  const status = pct >= 80 ? t('therapist.onTrack') : pct >= 50 ? t('therapist.someMissed') : t('therapist.needsAttention');
+  const status = noData
+    ? t('therapist.noDataYet')
+    : pct >= 80
+      ? t('therapist.onTrack')
+      : pct >= 50
+        ? t('therapist.someMissed')
+        : t('therapist.needsAttention');
 
   return (
     <section class="card" aria-labelledby="adh-title">
       <div class="row-between">
         <h2 id="adh-title">{t('therapist.adherence')}</h2>
-        <span class={`badge ${pct >= 80 ? 'ok' : 'warn'}`}>
-          <Icon name={pct >= 80 ? 'trendingUp' : 'triangleAlert'} />
+        <span class={`badge ${noData ? 'neutral' : pct >= 80 ? 'ok' : 'warn'}`}>
+          <Icon name={noData ? 'info' : pct >= 80 ? 'trendingUp' : 'triangleAlert'} />
           {status}
         </span>
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-        <span class="big-pct">{pct}%</span>
+        <span class="big-pct">{noData ? '–' : `${pct}%`}</span>
         <span class="muted">{t('therapist.doneOfPlanned', { done: week.done, planned: week.planned })}</span>
       </div>
       <div

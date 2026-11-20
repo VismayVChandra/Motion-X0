@@ -1,5 +1,6 @@
 import { route } from './router';
 import { DeviceScreen } from './screens/DeviceScreen';
+import { Guide } from './screens/Guide';
 import { History } from './screens/History';
 import { Home } from './screens/Home';
 import { LiveSession } from './screens/LiveSession';
@@ -10,6 +11,7 @@ import { Settings } from './screens/Settings';
 import { SimpleApp } from './screens/Simple';
 import { TherapistDashboard } from './screens/Therapist';
 import { settingsStore } from './store/settings';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { Shell } from './ui/Shell';
 
 function Screen() {
@@ -30,6 +32,8 @@ function Screen() {
       return <SessionDone />;
     case 'report':
       return <Report />;
+    case 'guide':
+      return <Guide />;
   }
 }
 
@@ -37,7 +41,9 @@ export function App() {
   if (settingsStore.settings.value.simpleMode && route.value !== 'report') return <SimpleApp />;
   return (
     <Shell>
-      <Screen />
+      <ErrorBoundary resetKey={route.value}>
+        <Screen />
+      </ErrorBoundary>
     </Shell>
   );
 }

@@ -1,6 +1,11 @@
 import { useState } from 'preact/hooks';
 import { displayDeviceAddress, normalizeDeviceUrl } from '../device/url';
 import { LANGUAGES, t } from '../i18n';
+import { hrefFor } from '../router';
+import { runner } from '../session/instance';
+import { makeSampleData } from '../store/demoData';
+import { planStore } from '../store/plan';
+import { sessionStore } from '../store/sessions';
 import { settingsStore, type Role, type ThemePref } from '../store/settings';
 import { Icon, type IconName } from '../ui/Icon';
 import { Seg, Switch } from '../ui/controls';
@@ -40,6 +45,7 @@ export function Settings() {
   const update = settingsStore.update;
   const [addr, setAddr] = useState(displayDeviceAddress(s.deviceUrl));
   const [addrError, setAddrError] = useState<string | null>(null);
+  const [dataMsg, setDataMsg] = useState<string | null>(null);
 
   const saveAddress = () => {
     const url = normalizeDeviceUrl(addr);
@@ -193,6 +199,77 @@ export function Settings() {
             ]}
           />
           <span class="muted small">{t('settings.roleDesc')}</span>
+        </div>
+      </section>
+
+      <section class="card" style={{ gap: 0 }} aria-label={t('settings.data')}>
+        <p class="eyebrow" style={{ marginBottom: '4px' }}>
+          {t('settings.data')}
+        </p>
+        <div class="set-row first">
+          <div class="set-left">
+            <span class="set-ic">
+              <Icon name="book" />
+            </span>
+            <div>
+              <strong>{t('settings.guide')}</strong>
+              <span class="desc">{t('settings.guideDesc')}</span>
+            </div>
+          </div>
+          <a class="btn btn-tonal" href={hrefFor('guide')}>
+            {t('guide.open')}
+          </a>
+        </div>
+        {s.demoMode && (
+          <div class="set-row column">
+            <div class="set-left">
+              <span class="set-ic">
+                <Icon name="database" />
+              </span>
+              <div>
+                <strong>{t('settings.sample')}</strong>
+                <span class="desc">{t('settings.sampleDesc')}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              disabled={runner.inProgress.value}
+              onClick={() => {
+                if (sessionStore.sessions.peek().length && !window.confirm(t('settings.sampleConfirm'))) return;
+                const { plan, sessions } = makeSampleData();
+                sessionStore.replaceAll(sessions);
+                planStore.restore(plan);
+                setDataMsg(t('settings.sampleDone'));
+              }}
+            >
+              <Icon name="database" />
+              {t('settings.sampleLoad')}
+            </button>
+          </div>
+        )}
+        <div class="set-row column">
+          <button
+            type="button"
+            class="btn btn-ghost"
+            style={{ color: 'var(--danger-text)' }}
+            disabled={runner.inProgress.value}
+            onClick={() => {
+              if (!window.confirm(t('settings.clearConfirm'))) return;
+              sessionStore.clear();
+              planStore.clear();
+              setDataMsg(t('settings.clearDone'));
+            }}
+          >
+            <Icon name="trash" />
+            {t('settings.clear')}
+          </button>
+          {dataMsg && (
+            <p class="saved-msg" role="status">
+              <Icon name="circleCheck" />
+              {dataMsg}
+            </p>
+          )}
         </div>
       </section>
 

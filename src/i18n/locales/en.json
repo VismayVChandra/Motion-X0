@@ -1,9 +1,24 @@
 {
-  "_meta": { "name": "English", "locale": "en-IN", "speech": "en-IN" },
+  "_meta": {
+    "name": "English",
+    "locale": "en-IN",
+    "speech": "en-IN"
+  },
   "notice": "Not a medical device. Prototype. Use under supervision.",
-  "nav": { "home": "Home", "device": "Device", "history": "History", "settings": "Settings" },
-  "a11y": { "home": "MOTION-X home", "mainNav": "Main" },
-  "theme": { "toLight": "Switch to light theme", "toDark": "Switch to dark theme" },
+  "nav": {
+    "home": "Home",
+    "device": "Device",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "a11y": {
+    "home": "MOTION-X home",
+    "mainNav": "Main"
+  },
+  "theme": {
+    "toLight": "Switch to light theme",
+    "toDark": "Switch to dark theme"
+  },
   "status": {
     "demo": "Demo mode",
     "connected": "Connected",
@@ -11,9 +26,23 @@
     "lost": "Connection lost",
     "offline": "Not connected"
   },
-  "estop": { "title": "EMERGENCY STOP", "hint": "Stops the motor immediately" },
-  "common": { "tryNow": "Try now", "cancel": "Cancel", "or": "or", "optional": "(optional)", "on": "On", "off": "Off" },
-  "unit": { "rpm": "rpm", "amps": "amps", "min": "min" },
+  "estop": {
+    "title": "EMERGENCY STOP",
+    "hint": "Stops the motor immediately"
+  },
+  "common": {
+    "tryNow": "Try now",
+    "cancel": "Cancel",
+    "or": "or",
+    "optional": "(optional)",
+    "on": "On",
+    "off": "Off"
+  },
+  "unit": {
+    "rpm": "rpm",
+    "amps": "amps",
+    "min": "min"
+  },
   "level": {
     "name1": "Gentle",
     "name2": "Steady",
@@ -23,7 +52,10 @@
     "short": "level {n}",
     "aria": "Level {n}, {name}"
   },
-  "role": { "patient": "Patient", "therapist": "Therapist" },
+  "role": {
+    "patient": "Patient",
+    "therapist": "Therapist"
+  },
   "fmt": {
     "sec": "{n} s",
     "min": "{n} min",
@@ -33,9 +65,21 @@
     "dateTime": "{date} · {time}"
   },
   "pattern": {
-    "constant": { "label": "Constant", "short": "Constant", "desc": "Same speed the whole time" },
-    "warmup": { "label": "Warm-up → Hold → Cool-down", "short": "Warm-up", "desc": "Eases in and out gently" },
-    "intervals": { "label": "Intervals", "short": "Intervals", "desc": "Short busy spells, then rest" }
+    "constant": {
+      "label": "Constant",
+      "short": "Constant",
+      "desc": "Same speed the whole time"
+    },
+    "warmup": {
+      "label": "Warm-up → Hold → Cool-down",
+      "short": "Warm-up",
+      "desc": "Eases in and out gently"
+    },
+    "intervals": {
+      "label": "Intervals",
+      "short": "Intervals",
+      "desc": "Short busy spells, then rest"
+    }
   },
   "phase": {
     "steady": "Steady",
@@ -52,7 +96,12 @@
     "earlyShort": "ended early",
     "estopShort": "emergency stop"
   },
-  "comfort": { "none": "No comfort score", "high": "High", "okay": "Okay", "comfortable": "Comfortable" },
+  "comfort": {
+    "none": "No comfort score",
+    "high": "High",
+    "okay": "Okay",
+    "comfortable": "Comfortable"
+  },
   "chart": {
     "goal": "Goal {n}",
     "comfortSummary": "Comfort scores for the last {n} sessions: {list}.",
@@ -120,7 +169,10 @@
     "targetN": "target {n}",
     "pedalSpeed": "Pedal speed",
     "current": "Motor current",
-    "noSensor": "no sensor"
+    "noSensor": "no sensor",
+    "readyTitle": "The machine is getting ready",
+    "readyText": "The motor controller is starting up (about 3 seconds). Start will be available in a moment.",
+    "faultText": "The machine reports \"{code}\". Controls are paused until it clears."
   },
   "demo": {
     "title": "Demo tools",
@@ -174,7 +226,18 @@
     "role": "Who is using the app?",
     "roleDesc": "A simple local switch for the prototype. No login.",
     "reset": "Reset settings",
-    "version": "MOTION-X app {v} · student prototype"
+    "version": "MOTION-X app {v} · student prototype",
+    "data": "Help and data",
+    "guide": "Quick start guide",
+    "guideDesc": "How to use MOTION-X in 5 steps",
+    "sample": "Sample data",
+    "sampleDesc": "Fill history and the therapist view with two weeks of example sessions (Demo mode only).",
+    "sampleLoad": "Load sample data",
+    "sampleConfirm": "Replace all saved sessions and the plan with sample data?",
+    "sampleDone": "Sample data loaded.",
+    "clear": "Clear all sessions and the plan",
+    "clearConfirm": "Delete all saved sessions and the plan on this device? This cannot be undone.",
+    "clearDone": "All sessions and the plan were deleted."
   },
   "home": {
     "morning": "Good morning",
@@ -197,9 +260,15 @@
     "left": "{time} left",
     "return": "Return to session",
     "todaysPlan": "Today’s plan",
-    "streak": { "one": "{n}-day streak", "other": "{n}-day streak" },
+    "streak": {
+      "one": "{n}-day streak",
+      "other": "{n}-day streak"
+    },
     "allDone": "All done for today",
-    "doneOf": { "one": "{done} of {n} session done", "other": "{done} of {n} sessions done" },
+    "doneOf": {
+      "one": "{done} of {n} session done",
+      "other": "{done} of {n} sessions done"
+    },
     "segDone": "Done",
     "segNext": "Next",
     "minEach": "{n} min each",
@@ -304,7 +373,8 @@
     "comfortSub": "Last {n} scored sessions · lower is more comfortable",
     "latest": "Latest sessions",
     "cycles": "{n} cycles",
-    "noSessions": "No sessions yet."
+    "noSessions": "No sessions yet.",
+    "noDataYet": "Nothing to measure yet"
   },
   "history": {
     "title": "History",
@@ -316,8 +386,14 @@
     "month": "Month",
     "last7": "Last 7 days",
     "last30": "Last 30 days",
-    "days": { "one": "{n} day", "other": "{n} days" },
-    "perDay": { "one": "{n} session a day", "other": "{n} sessions a day" },
+    "days": {
+      "one": "{n} day",
+      "other": "{n} days"
+    },
+    "perDay": {
+      "one": "{n} session a day",
+      "other": "{n} sessions a day"
+    },
     "streakBest": "Current streak · Best: {best}",
     "minutes": "Minutes per day",
     "totalMin": "{n} min in total",
@@ -387,5 +463,46 @@
     "finished": "Session finished. Well done.",
     "ended": "Session ended.",
     "estop": "Emergency stop."
+  },
+  "error": {
+    "title": "Something went wrong on this screen",
+    "text": "The machine stops on its own if the app stops responding. Reload to continue; your saved sessions are safe.",
+    "reload": "Reload app",
+    "details": "Technical details"
+  },
+  "storage": {
+    "title": "This browser is not saving data",
+    "text": "Private browsing or blocked storage: sessions and plans will be lost when you close the app. Use a normal browser window."
+  },
+  "guide": {
+    "eyebrow": "Quick start",
+    "title": "MOTION-X in 5 steps",
+    "cardTitle": "New here?",
+    "cardText": "A one-minute quick start.",
+    "open": "Open",
+    "dismiss": "Dismiss quick start",
+    "go": "Go to Device",
+    "s1": {
+      "title": "Connect",
+      "text": "Join the “MOTION-X” Wi-Fi and open the app, or use Demo mode to try everything without the machine."
+    },
+    "s2": {
+      "title": "Start a session",
+      "text": "Home → Start. Pick a duration, a speed level and a pattern. The motor always speeds up gently."
+    },
+    "s3": {
+      "title": "Stop any time",
+      "text": "The red EMERGENCY STOP stays at the bottom of every screen during a session. If the connection drops, the machine stops by itself."
+    },
+    "s4": {
+      "title": "Rate your comfort",
+      "text": "After each session tap 1–10. A score of 7 or more shows advice to stop and talk to your therapist."
+    },
+    "s5": {
+      "title": "See progress",
+      "text": "History shows minutes, plan adherence, streaks and comfort. The therapist view sets the plan and prints reports."
+    },
+    "safetyTitle": "Use under supervision",
+    "safetyText": "Not a medical device. Prototype. Stop at once if anything feels uncomfortable."
   }
 }

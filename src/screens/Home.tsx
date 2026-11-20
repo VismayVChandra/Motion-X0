@@ -6,6 +6,7 @@ import { runner, setupChoice } from '../session/instance';
 import { planStore, type Plan } from '../store/plan';
 import { sessionStore, type SessionRecord } from '../store/sessions';
 import { settingsStore } from '../store/settings';
+import { storageOk } from '../store/storageCheck';
 import { Icon } from '../ui/Icon';
 import { duration, longDate, mmss, when } from '../ui/format';
 import { ComfortChip, levelName, patternShort } from '../ui/session-bits';
@@ -37,6 +38,30 @@ export function Home() {
           {firstName ? t(`${greetingKey()}Name`, { name: firstName }) : t(greetingKey())}
         </h1>
       </div>
+
+      <StorageWarning />
+
+      {!settingsStore.settings.value.guideSeen && !inProgress && (
+        <div class="card-tonal guide-card" role="note">
+          <Icon name="info" />
+          <span style={{ flex: 1 }}>
+            <strong>{t('guide.cardTitle')}</strong> {t('guide.cardText')}
+          </span>
+          <div class="guide-card-actions">
+            <a class="btn btn-tonal" href={hrefFor('guide')} style={{ background: 'var(--surface)' }}>
+              {t('guide.open')}
+            </a>
+            <button
+              type="button"
+              class="icon-btn"
+              aria-label={t('guide.dismiss')}
+              onClick={() => settingsStore.update({ guideSeen: true })}
+            >
+              <Icon name="x" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {inProgress ? (
         <InProgressCard />
@@ -90,6 +115,20 @@ export function Home() {
         {t('home.therapistView')}
       </button>
     </section>
+  );
+}
+
+/** Shown when the browser will not save data (private mode, storage blocked). */
+export function StorageWarning() {
+  if (storageOk) return null;
+  return (
+    <div class="advisory" role="alert">
+      <Icon name="triangleAlert" />
+      <div>
+        <strong>{t('storage.title')}</strong>
+        <p>{t('storage.text')}</p>
+      </div>
+    </div>
   );
 }
 

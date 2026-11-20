@@ -3,13 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f766e" />
-    <meta name="description" content="MOTION-X exercise tracking. Prototype, not a medical device." />
+    <meta name="theme-color" content="#f4f7f6" />
+    <meta name="description" content="MOTION-X exercise tracking for a motor-assisted leg exercise prototype. Not a medical device." />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>MOTION-X</title>
+    <style>
+      /* Shown until the app script runs (slow ESP32 Wi-Fi, old phones). */
+      .boot { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 16px; padding: 24px; text-align: center; font-family: system-ui, sans-serif; color: #0f1f1d; background: #f4f7f6; }
+      .boot-mark { width: 64px; height: 64px; border-radius: 16px; background: #0f766e; }
+      .boot p { margin: 0; font-size: 18px; font-weight: 600; }
+      .boot small { color: #4a5c59; font-size: 14px; max-width: 320px; }
+      @media (prefers-color-scheme: dark) { .boot { background: #0a1211; color: #e8f1ef; } .boot small { color: #a2b4b0; } }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="boot" role="status">
+        <div class="boot-mark" aria-hidden="true"></div>
+        <p>Loading MOTION-X…</p>
+        <small>Not a medical device. Prototype. Use under supervision.</small>
+      </div>
+    </div>
+    <noscript>
+      <p style="padding: 24px; font-family: system-ui, sans-serif">
+        MOTION-X needs JavaScript. Please enable it in your browser settings.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

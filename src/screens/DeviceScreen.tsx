@@ -8,6 +8,7 @@ import { settingsStore } from '../store/settings';
 import { Icon } from '../ui/Icon';
 import { Switch } from '../ui/controls';
 import { levelName } from '../ui/session-bits';
+import { isNotReadyFault } from '../session/runner';
 
 const SPEEDS: (1 | 2 | 3)[] = [1, 2, 3];
 /** Level picked while stopped; kept across reconnects and screen changes. */
@@ -136,6 +137,7 @@ function ControlView({ state }: { state: DeviceState }) {
   const active = state.running || state.targetLevel > 0;
   const estop = state.fault === 'estop';
   const timedOut = state.fault === 'heartbeat_timeout';
+  const notReady = isNotReadyFault(state.fault);
   const target: Level = active ? state.targetLevel : chosen;
   const ramping = active && state.level !== state.targetLevel;
   const demo = device.kind.value === 'sim';
@@ -153,6 +155,7 @@ function ControlView({ state }: { state: DeviceState }) {
       </div>
 
       {estop && <EstopAlarm running={state.running} />}
+      {notReady && <NotReadyNotice fault={state.fault} />}
 
       {timedOut && !active && (
         <div class="advisory" role="status">
@@ -168,8 +171,8 @@ function ControlView({ state }: { state: DeviceState }) {
         <button
           type="button"
           class="btn btn-primary btn-lg"
-          aria-disabled={active || estop}
-          disabled={estop}
+          aria-disabled={active || estop || notReady}
+          disabled={estop || notReady}
           onClick={() => !active && device.start(chosen)}
         >
           <Icon name={active ? 'check' : 'play'} />
@@ -196,7 +199,7 @@ function ControlView({ state }: { state: DeviceState }) {
                 role="radio"
                 aria-checked={selected}
                 aria-label={t('level.aria', { n: l, name: levelName(l) }) + (tag ? `, ${tag}` : '')}
-                disabled={estop}
+                disabled={estop || notReady}
                 onClick={() => pickLevel(l)}
               >
                 {tag && <span class="seg-tag">{tag}</span>}
@@ -207,7 +210,7 @@ function ControlView({ state }: { state: DeviceState }) {
           })}
         </div>
         {ramping && <RampRow state={state} />}
-        {!active && !estop && <p class="muted small">{t('device.pickHint')}</p>}
+        {!active && !estop && !notReady && <p class="muted small">{t('device.pickHint')}</p>}
       </section>
 
       <section class="stack" style={{ gap: '10px' }} aria-labelledby="live-title">
@@ -228,6 +231,23 @@ function ControlView({ state }: { state: DeviceState }) {
         {t('device.disconnect')}
       </button>
     </section>
+  );
+}
+
+/** The machine is starting up (ESC arming) or reports another blocking fault. */
+export function NotReadyNotice({ fault }: { fault: string | null }) {
+  return (
+    <div class="card status-card" role="status">
+      <span class="spin-ic spin">
+        <Icon name="loader" />
+      </span>
+      <div class="stack">
+        <strong>{t('device.readyTitle')}</strong>
+        <span class="muted small">
+          {fault === 'esc_not_armed' ? t('device.readyText') : t('device.faultText', { code: String(fault) })}
+        </span>
+      </div>
+    </div>
   );
 }
 

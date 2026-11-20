@@ -1,7 +1,7 @@
 import { signal } from '@preact/signals';
 
-export type Route = 'home' | 'device' | 'history' | 'settings' | 'setup' | 'live' | 'done' | 'report';
-export const ROUTES: readonly Route[] = ['home', 'device', 'history', 'settings', 'setup', 'live', 'done', 'report'];
+export type Route = 'home' | 'device' | 'history' | 'settings' | 'setup' | 'live' | 'done' | 'report' | 'guide';
+export const ROUTES: readonly Route[] = ['home', 'device', 'history', 'settings', 'setup', 'live', 'done', 'report', 'guide'];
 
 /** Which bottom tab is highlighted for each route. */
 export const TAB_FOR: Record<Route, Route> = {
@@ -13,6 +13,7 @@ export const TAB_FOR: Record<Route, Route> = {
   live: 'home',
   done: 'home',
   report: 'history',
+  guide: 'home',
 };
 
 /** "#/report/abc" → { route: 'report', param: 'abc' } */

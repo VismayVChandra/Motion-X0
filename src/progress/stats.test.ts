@@ -98,11 +98,11 @@ describe('dailyMinutes', () => {
 
 describe('weeklyAdherence', () => {
   it('counts only days since the plan started and up to today', () => {
-    // Plan started Wednesday (2 days ago): Wed, Thu, Fri → 3 days × 2 = 6 planned.
+    // Plan started Wednesday (2 days ago): Wed 2/2, Thu 1/2, today (Fri, in progress) 1 so far.
     const p = plan({ startedAt: at(2) });
     const s = [session(2), session(2), session(1), session(0)];
     const [week] = weeklyAdherence(s, p, 1, NOW);
-    expect(week).toMatchObject({ planned: 6, done: 4, pct: 67 });
+    expect(week).toMatchObject({ planned: 5, done: 4, pct: 80 });
   });
 
   it('extra sessions do not push adherence over 100 %', () => {
@@ -112,8 +112,20 @@ describe('weeklyAdherence', () => {
   });
 
   it('short sessions do not count', () => {
-    const p = plan({ startedAt: at(0), sessionsPerDay: 1 });
-    expect(weeklyAdherence([session(0, 2)], p, 1, NOW)[0].pct).toBe(0);
+    const p = plan({ startedAt: at(1), sessionsPerDay: 1 });
+    expect(weeklyAdherence([session(1, 2)], p, 1, NOW)[0].pct).toBe(0);
+  });
+
+  it('an unfinished today never lowers adherence', () => {
+    const p = plan({ startedAt: at(1), sessionsPerDay: 2 });
+    const s = [session(1), session(1)]; // yesterday complete, nothing yet today
+    expect(weeklyAdherence(s, p, 1, NOW)[0]).toMatchObject({ planned: 2, done: 2, pct: 100 });
+    expect(weeklyAdherence([...s, session(0)], p, 1, NOW)[0].pct).toBe(100);
+  });
+
+  it('a plan started today with nothing done yet has no adherence value', () => {
+    const p = plan({ startedAt: at(0) });
+    expect(weeklyAdherence([], p, 1, NOW)[0].pct).toBeNull();
   });
 
   it('weeks before the plan have no adherence value', () => {

@@ -51,7 +51,7 @@ The app must accept messages that lack `v`, `target_level` or `source` (an older
 | Code | Cause | Cleared by |
 |---|---|---|
 | `estop` | `estop` command received | `reset` |
-| `heartbeat_timeout` | App was in control and sent nothing for 2 s | `reset`, or any new `set_speed` from the app after the connection returns |
+| `heartbeat_timeout` | App was in control and sent nothing for 2 s | `reset`, or any new `set_speed` (from the app once it is back, or an IR remote speed key at the machine) |
 | `esc_not_armed` | ESC arming sequence has not finished | Clears itself after arming |
 
 ## Heartbeat
@@ -66,7 +66,8 @@ The app must accept messages that lack `v`, `target_level` or `source` (an older
 - IR `0` (stop) always wins, whoever started the motor.
 - An IR speed key takes control: `source` becomes `"ir"`.
 - An app `set_speed` takes control back: `source` becomes `"app"`.
-- An IR key does not clear an `estop` latch; only `reset` from the app or a power cycle does.
+- An IR key does not clear an `estop` latch; only `reset` from the app or a power cycle does. An IR speed key does clear a `heartbeat_timeout` (the operator is at the machine).
+- While `fault` is `esc_not_armed` (first ~3 s after power-on) speed commands are ignored; the app shows "getting ready" and disables Start.
 
 ## Ramping (firmware)
 

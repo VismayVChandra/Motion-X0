@@ -152,3 +152,19 @@ The emergency Stop bar is part of the app shell, so it appears on every tab whil
 | Phones | DNS answers every name with 192.168.4.1; connectivity checks get "internet OK" replies so phones stay on the hotspot. |
 
 Build, upload and the bench test checklist: [firmware.md](firmware.md).
+
+## Polish and demo readiness (Wave 6)
+
+| Topic | Detail |
+|---|---|
+| PWA | `public/manifest.webmanifest`, PNG + maskable icons, `public/sw.js`. Registered only on secure origins in the web build (Vercel/localhost). Precaches the app shell and the hashed JS/CSS listed in `index.html`; verified offline reload in Edge. |
+| Loading | Static splash inside `#app` in `index.html` (shown until the script runs, e.g. on slow ESP32 Wi-Fi), plus `<noscript>`. |
+| Errors | `ErrorBoundary` wraps each screen only, so the shell (status badge, emergency Stop bar) keeps working if a screen crashes. |
+| Storage | `storageCheck.ts` detects blocked storage (private mode) and Home warns that data will not be kept. |
+| Not ready | Device faults other than `estop` / `heartbeat_timeout` (e.g. `esc_not_armed` during the first 3 s) disable Start everywhere and show "The machine is getting ready". |
+| Quick start | `#/guide`, a dismissible first-run card on Home, and a link in Settings. |
+| Sample data | Settings → Load sample data (Demo mode only) for demos; Clear all sessions and the plan. |
+| Adherence | Today counts only what has been done so far, so an unfinished day never lowers adherence. |
+| Checks | Lighthouse (mobile): Performance 100, Accessibility 100, Best practices 100, SEO 100 on every main screen. `npm run size`: ~76 KB gzipped of the 300 KB budget. |
+
+Demo script: [demo.md](demo.md).

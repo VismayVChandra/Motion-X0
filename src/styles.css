@@ -2541,3 +2541,39 @@ textarea.input {
     text-align: left;
   }
 }
+
+/* ======================= Wave 6: polish ======================= */
+.guide-card {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.guide-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.guide-steps strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.guide-steps .ic {
+  color: var(--primary-text);
+}
+
+details summary {
+  cursor: pointer;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+}
+
+/* Phones: once a plan exists, the therapist sees the summary before the plan editor. */
+@media (max-width: 899px) {
+  .desk-grid.summary-first > .desk-col:last-child {
+    order: -1;
+  }
+}

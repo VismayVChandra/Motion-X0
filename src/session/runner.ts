@@ -41,7 +41,11 @@ export const COMMAND_GRACE_MS = 1500;
 /** Longest gap counted as exercise time (e.g. after the browser throttled timers). */
 const MAX_TICK_GAP_MS = 1000;
 
-export type StartBlock = 'not_connected' | 'estop' | 'already_running';
+export type StartBlock = 'not_connected' | 'estop' | 'not_ready' | 'already_running';
+
+/** A device fault that blocks speed commands but is not the e-stop or a heartbeat timeout (e.g. ESC arming). */
+export const isNotReadyFault = (fault: string | null | undefined) =>
+  !!fault && fault !== 'estop' && fault !== 'heartbeat_timeout';
 
 /**
  * Runs one exercise session: timer, pattern phases → device levels, cycle count,
@@ -80,7 +84,9 @@ export class SessionRunner {
   canStart(): StartBlock | null {
     if (this.inProgress.peek()) return 'already_running';
     if (this.device.link.peek() !== 'connected' || !this.device.state.peek()) return 'not_connected';
-    if (this.device.state.peek()?.fault === 'estop') return 'estop';
+    const fault = this.device.state.peek()?.fault;
+    if (fault === 'estop') return 'estop';
+    if (isNotReadyFault(fault)) return 'not_ready';
     return null;
   }
 

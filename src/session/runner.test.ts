@@ -150,3 +150,32 @@ describe('SessionRunner', () => {
     expect(runner.activeMs.value - before).toBeLessThanOrEqual(1_000);
   });
 });
+
+describe('SessionRunner with a device that is still arming', () => {
+  it('refuses to start while the ESC arms (esc_not_armed) and allows it afterwards', async () => {
+    const { signal } = await import('@preact/signals');
+    const state = signal<import('../device/types').DeviceState | null>({
+      level: 0,
+      targetLevel: 0,
+      running: false,
+      rpm: null,
+      current: null,
+      fault: 'esc_not_armed',
+      source: 'none',
+    });
+    const fake = {
+      state,
+      link: signal<'connected'>('connected'),
+      kind: signal<'real'>('real'),
+      setLevel: vi.fn(() => true),
+      stop: vi.fn(() => true),
+    };
+    const r = new SessionRunner(fake);
+    expect(r.canStart()).toBe('not_ready');
+    expect(r.start({ durationSec: 120, level: 1, pattern: 'constant' })).toBe(false);
+    expect(fake.setLevel).not.toHaveBeenCalled();
+    state.value = { ...state.value!, fault: null };
+    expect(r.canStart()).toBeNull();
+    r.dispose();
+  });
+});

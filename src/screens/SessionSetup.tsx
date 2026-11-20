@@ -6,6 +6,7 @@ import { PATTERN_IDS, type SpeedLevel } from '../session/patterns';
 import { planStore } from '../store/plan';
 import { Icon } from '../ui/Icon';
 import { levelName, PatternIcon, patternDesc, patternLabel } from '../ui/session-bits';
+import { NotReadyNotice } from './DeviceScreen';
 
 export const DURATION_OPTIONS = [2, 5, 10, 15, 20] as const;
 
@@ -149,6 +150,8 @@ export function SessionSetup() {
           </div>
         </div>
       )}
+
+      {block === 'not_ready' && <NotReadyNotice fault={device.state.value?.fault ?? null} />}
 
       <button type="button" class="btn btn-primary btn-xl btn-block" disabled={block !== null} onClick={start}>
         <Icon name="play" />

@@ -151,10 +151,9 @@ static void applyCommand(const Cmd &c, Source from) {
         break;
       }
       if (motor.fault == FAULT_ESTOP || motor.fault == FAULT_NOT_ARMED) break;  // latched / not ready
-      if (motor.fault == FAULT_HEARTBEAT) {
-        if (from != SRC_APP) break;
-        motor.fault = FAULT_NONE;  // the app is back and asked again
-      }
+      // A deliberate new speed request (app back online, or the IR remote at the machine)
+      // clears a heartbeat timeout. The e-stop latch above is never cleared this way.
+      if (motor.fault == FAULT_HEARTBEAT) motor.fault = FAULT_NONE;
       motor.target = c.level;
       motor.source = from;
       break;

@@ -129,8 +129,11 @@ export function weeklyAdherence(sessions: SessionRecord[], plan: Plan, weeks: nu
     for (let d = 0; d < 7; d++) {
       const day = addDays(weekStart, d);
       if (day < planStart || day > today) continue;
-      planned += plan.sessionsPerDay;
-      done += Math.min(plan.sessionsPerDay, doneOnDay(byDay.get(dayKey(day)), plan));
+      const doneThatDay = Math.min(plan.sessionsPerDay, doneOnDay(byDay.get(dayKey(day)), plan));
+      // Today is still in progress: sessions not done yet are not "missed", so today only
+      // counts what has been done so far (it can raise adherence, never lower it).
+      planned += day === today ? doneThatDay : plan.sessionsPerDay;
+      done += doneThatDay;
     }
     out.push({
       weekStart,
