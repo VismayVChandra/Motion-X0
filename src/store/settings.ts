@@ -23,7 +23,8 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
   theme: 'system',
-  demoMode: true,
+  // Device build (served by the ESP32) starts in real mode; web/dev builds start in Demo mode.
+  demoMode: import.meta.env.VITE_DEVICE_BUILD !== '1',
   deviceUrl: DEFAULT_DEVICE_URL,
   role: 'patient',
   language: 'en',

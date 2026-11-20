@@ -1,12 +1,13 @@
 {
   "name": "motion-x",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "MOTION-X web app: exercise tracking for a motor-assisted lower-limb rehab prototype",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
+    "build:device": "tsc --noEmit && node scripts/build-device.mjs",
     "preview": "vite preview --host",
     "test": "vitest run",
     "test:watch": "vitest",

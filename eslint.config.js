@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'firmware'] },
+  { ignores: ['dist', 'dist-device', 'node_modules', 'firmware'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -12,4 +12,5 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
+  { files: ['scripts/**/*.mjs'], languageOptions: { globals: { ...globals.node } } },
 );

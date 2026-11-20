@@ -138,3 +138,17 @@ The emergency Stop bar is part of the app shell, so it appears on every tab whil
 | Simple mode | One screen: big timer, huge START/PAUSE/RESUME and a red STOP (the emergency stop, shown while the motor or a session is active). No tabs. The comfort check still follows each session. |
 | Voice prompts | Optional (off by default). Web Speech API in the active language: started, paused, connection lost, slowing down, speeding up, one minute left, finished, emergency stop. Decided by a pure, tested `voiceCue()` function. |
 | Report | `#/report/<session id>`, opened from History, the therapist's latest sessions, or "View report" after a session. Print stylesheet: A4, always light, app chrome hidden, one page. Tested by printing to PDF with headless Edge in English and Hindi. |
+
+## Firmware (Wave 5)
+
+| Topic | Detail |
+|---|---|
+| Source | `firmware/motionx/motionx.ino` + `config.h`. Builds in the Arduino IDE, with `arduino-cli`, or with PlatformIO (`firmware/platformio.ini`). |
+| Libraries | ESP Async WebServer + Async TCP (ESP32Async), ArduinoJson 7, IRremote 4. Optional Adafruit INA219. |
+| Threading | WebSocket callbacks run in the async_tcp task and only enqueue commands (FreeRTOS queue); `loop()` applies them, so motor state has one owner. E-stop waits up to 20 ms for queue space instead of being dropped. |
+| Rules | Same as `MotorModel` (simulator): ramp 0.25/s up, 0.5/s down, 2 s heartbeat timeout for app control, e-stop latch, IR exempt from timeout, IR 0 always stops. |
+| ESC | 50 Hz LEDC, 16-bit; per-level pulse table; hard ceiling `ESC_MAX_US_LIMIT`; 3 s arming at boot. Works on ESP32 Arduino core 2.x and 3.x. |
+| Web app on the device | `npm run build:device` builds with Demo mode off by default and gzips into `firmware/motionx/data/` (~50 KB). Served from LittleFS with `Content-Encoding: gzip`. |
+| Phones | DNS answers every name with 192.168.4.1; connectivity checks get "internet OK" replies so phones stay on the hotspot. |
+
+Build, upload and the bench test checklist: [firmware.md](firmware.md).

@@ -4,3 +4,6 @@ dist/
 .DS_Store
 coverage/
 .vscode/
+dist-device/
+firmware/motionx/data/
+firmware/.pio/
